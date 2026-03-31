@@ -122,6 +122,9 @@
                 </span>
                 <span class="text-sm text-neutral-500">({{ $ratingsCount }} {{ $ratingsCount === 1 ? 'rating' : 'ratings' }})</span>
             </div>
+            <p class="mt-2 text-xs font-medium text-emerald-700">
+                {{ $watchingNow }} {{ $watchingNow === 1 ? 'person is' : 'people are' }} viewing this right now.
+            </p>
 
             <p class="mt-3 text-sm">
                 <span class="font-medium text-neutral-600">Availability:</span>
@@ -277,6 +280,15 @@
                 <p class="inline-flex items-center gap-2"><span class="text-emerald-600">✔</span> Secure Payment</p>
                 <p class="inline-flex items-center gap-2"><span class="text-emerald-600">✔</span> 7-Day Return Policy</p>
             </div>
+            @if ($activeDiscountPromo)
+                <div class="mt-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200/80">
+                    <p class="font-semibold">Coupon / Promo available</p>
+                    <p class="mt-1">
+                        {{ $activeDiscountPromo->title }} —
+                        Save {{ rtrim(rtrim(number_format((float) $activeDiscountPromo->value, 2), '0'), '.') }}% at checkout.
+                    </p>
+                </div>
+            @endif
 
             <dl class="mt-8 grid gap-3 border-t border-neutral-200 pt-8 text-sm text-neutral-600 sm:grid-cols-2">
                 <div>
@@ -351,6 +363,21 @@
         <div id="panel-review" class="product-panel mt-8 hidden text-sm text-neutral-600">
             <div class="grid gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">
                 <div>
+                    <div class="mb-5 rounded-2xl border border-neutral-200 bg-white p-4">
+                        <p class="text-sm font-semibold text-neutral-900">Customer ratings</p>
+                        <div class="mt-3 space-y-2.5">
+                            @foreach ($ratingBreakdown as $row)
+                                <div class="grid grid-cols-[56px_1fr_44px] items-center gap-2 text-xs text-neutral-600">
+                                    <span>{{ $row['star'] }} star</span>
+                                    <div class="h-2 overflow-hidden rounded-full bg-neutral-100">
+                                        <div class="h-full rounded-full bg-amber-400" style="width: {{ $row['percent'] }}%"></div>
+                                    </div>
+                                    <span class="text-right">{{ $row['count'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
                     @if ($product->ratings->isEmpty())
                         <p>No reviews yet. Be the first to share your experience with this product.</p>
                     @else
@@ -413,6 +440,30 @@
             <p class="mt-1 text-sm text-neutral-500">More from {{ $product->category->name }}</p>
             <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($relatedProducts as $p)
+                    @include('products.partials.card', ['product' => $p])
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    @if (isset($alsoBoughtProducts) && $alsoBoughtProducts->isNotEmpty())
+        <section class="mt-14 border-t border-neutral-100 pt-12 lg:mt-16">
+            <h2 class="text-lg font-bold uppercase tracking-[0.12em] text-primary-950">People Also Bought</h2>
+            <p class="mt-1 text-sm text-neutral-500">Based on orders that include this product.</p>
+            <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach ($alsoBoughtProducts as $p)
+                    @include('products.partials.card', ['product' => $p])
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    @if (isset($recentlyViewedProducts) && $recentlyViewedProducts->isNotEmpty())
+        <section class="mt-14 border-t border-neutral-100 pt-12 lg:mt-16">
+            <h2 class="text-lg font-bold uppercase tracking-[0.12em] text-primary-950">Recently Viewed</h2>
+            <p class="mt-1 text-sm text-neutral-500">Continue where you left off.</p>
+            <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach ($recentlyViewedProducts as $p)
                     @include('products.partials.card', ['product' => $p])
                 @endforeach
             </div>

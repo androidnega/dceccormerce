@@ -7,15 +7,18 @@ use App\Models\HeroSlide;
 use App\Models\HomepageSection;
 use App\Models\HomepageSetting;
 use App\Models\NewsPost;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductRating;
+use App\Models\Promo;
 use App\Models\SaleSpotlightCard;
 use App\Models\StoreProductDisplaySetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -476,7 +479,7 @@ class ProductController extends Controller
         ];
     }
 
-    public function show(Product $product): View
+    public function show(Request $request, Product $product): View
     {
         abort_unless($product->is_active, 404);
 
@@ -497,11 +500,113 @@ class ProductController extends Controller
             ->limit(4)
             ->get();
 
+        $ratingCounts = ProductRating::query()
+            ->where('product_id', $product->id)
+            ->selectRaw('rating, COUNT(*) as total')
+            ->groupBy('rating')
+            ->pluck('total', 'rating');
+        $totalRatings = (int) $ratingCounts->sum();
+        $ratingBreakdown = collect(range(5, 1))->map(function (int $star) use ($ratingCounts, $totalRatings) {
+            $count = (int) ($ratingCounts[$star] ?? 0);
+            $percent = $totalRatings > 0 ? (int) round(($count / $totalRatings) * 100) : 0;
+
+            return [
+                'star' => $star,
+                'count' => $count,
+                'percent' => $percent,
+            ];
+        });
+
+        $activeDiscountPromo = Promo::query()
+            ->active()
+            ->where('type', Promo::TYPE_DISCOUNT)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first();
+
+        $alsoBoughtIds = OrderItem::query()
+            ->whereIn('order_id', function ($q) use ($product) {
+                $q->from('order_items')
+                    ->select('order_id')
+                    ->where('product_id', $product->id);
+            })
+            ->where('product_id', '!=', $product->id)
+            ->selectRaw('product_id, SUM(quantity) as qty')
+            ->groupBy('product_id')
+            ->orderByDesc('qty')
+            ->limit(8)
+            ->pluck('product_id')
+            ->all();
+
+        $alsoBoughtProducts = collect();
+        if (count($alsoBoughtIds) > 0) {
+            $alsoBoughtProducts = Product::query()
+                ->active()
+                ->whereIn('id', $alsoBoughtIds)
+                ->with(['category', 'images'])
+                ->withAvg('ratings', 'rating')
+                ->withCount('ratings')
+                ->get()
+                ->sortBy(fn (Product $p) => array_search($p->id, $alsoBoughtIds, true))
+                ->take(4)
+                ->values();
+        }
+
+        $recentIds = collect((array) $request->session()->get('recently_viewed_products', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->prepend($product->id)
+            ->unique()
+            ->take(12)
+            ->values();
+        $request->session()->put('recently_viewed_products', $recentIds->all());
+
+        $recentlyViewedProducts = Product::query()
+            ->active()
+            ->whereIn('id', $recentIds->reject(fn ($id) => $id === $product->id)->take(4)->all())
+            ->with(['category', 'images'])
+            ->withAvg('ratings', 'rating')
+            ->withCount('ratings')
+            ->latest()
+            ->get();
+
+        $watchingNow = $this->trackLiveViewers($request, $product);
+
         $userRating = auth()->check()
             ? $product->ratings()->where('user_id', auth()->id())->first()
             : null;
 
-        return view('products.show', compact('product', 'relatedProducts', 'userRating'));
+        return view('products.show', compact(
+            'product',
+            'relatedProducts',
+            'userRating',
+            'ratingBreakdown',
+            'activeDiscountPromo',
+            'alsoBoughtProducts',
+            'recentlyViewedProducts',
+            'watchingNow'
+        ));
+    }
+
+    private function trackLiveViewers(Request $request, Product $product): int
+    {
+        $cacheKey = 'product_viewers:'.$product->id;
+        $viewerKey = (string) ($request->session()->getId() ?: $request->ip() ?: uniqid('viewer_', true));
+        $now = time();
+        $ttlSeconds = 300;
+
+        $viewers = Cache::get($cacheKey, []);
+        if (! is_array($viewers)) {
+            $viewers = [];
+        }
+
+        $viewers[$viewerKey] = $now;
+        $cutoff = $now - $ttlSeconds;
+        $viewers = array_filter($viewers, fn ($seenAt) => is_numeric($seenAt) && (int) $seenAt >= $cutoff);
+
+        Cache::put($cacheKey, $viewers, now()->addSeconds($ttlSeconds));
+
+        return count($viewers);
     }
 
     public function rate(Request $request, Product $product): RedirectResponse
