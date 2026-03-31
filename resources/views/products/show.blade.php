@@ -2,7 +2,7 @@
 
 @section('title', $product->name . ' — ' . config('app.name'))
 
-@section('main_class', 'mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10')
+@section('main_class', 'mx-auto w-full max-w-[1200px] px-5 py-10 sm:px-6 lg:px-8 lg:py-12')
 
 @section('content')
     @php
@@ -27,7 +27,7 @@
         <span class="font-medium text-neutral-800">{{ $product->name }}</span>
     </nav>
 
-    <div class="grid gap-10 border-b border-neutral-100 pb-12 lg:grid-cols-2 lg:gap-14 lg:items-start lg:pb-14">
+    <div class="grid gap-10 border-b border-neutral-100 pb-12 lg:grid-cols-2 lg:gap-[50px] lg:items-start lg:pb-14">
         {{-- Gallery --}}
         <div class="min-w-0">
             @if ($images->isEmpty())
@@ -36,7 +36,7 @@
                 </div>
             @else
                 <div class="mx-auto w-full max-w-2xl lg:mx-0">
-                <div class="relative overflow-hidden rounded-sm border border-neutral-200 bg-white">
+                <div class="relative overflow-hidden rounded-2xl bg-neutral-50 shadow-sm ring-1 ring-neutral-200/70">
                     <p class="sr-only" id="product-zoom-hint">Hover to magnify. Scroll while hovering to adjust zoom.</p>
                     <div
                         id="product-zoom-viewport"
@@ -60,21 +60,21 @@
                         target="_blank"
                         rel="noopener noreferrer"
                         id="product-main-zoom-link"
-                        class="absolute right-3 top-3 z-10 rounded-full bg-white/95 p-2 text-neutral-700 shadow-sm ring-1 ring-neutral-200/80 transition hover:bg-white hover:text-primary-800"
+                        class="absolute right-3 top-3 z-10 rounded-full bg-white/95 p-2 text-neutral-700 shadow-sm ring-1 ring-neutral-200/80 transition hover:scale-[1.03] hover:bg-white hover:text-primary-800"
                         aria-label="Open image full size"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
                     </a>
                 </div>
                 @if ($images->count() > 1)
-                    <div class="mt-3 flex flex-wrap gap-2" role="list" aria-label="Product images">
+                    <div class="thumbnail-row mt-3 flex flex-wrap gap-2" role="list" aria-label="Product images">
                         @foreach ($images as $idx => $image)
                             @php
                                 $variantLabel = $image->color_label ?: 'Image '.($idx + 1);
                             @endphp
                             <button
                                 type="button"
-                                class="product-gallery-thumb product-variant-picker relative h-16 w-16 shrink-0 overflow-hidden rounded-sm border-2 transition {{ $idx === 0 ? 'border-primary-800 ring-1 ring-primary-800/20' : 'border-neutral-200 hover:border-primary-400' }}"
+                                class="product-gallery-thumb product-variant-picker relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition {{ $idx === 0 ? 'border-primary-800 ring-1 ring-primary-800/20' : 'border-neutral-200 hover:border-primary-400' }}"
                                 data-full-url="{{ $image->url() }}"
                                 data-open-url="{{ route('products.image.open', [$product, $image]) }}"
                                 data-variant-index="{{ $idx }}"
@@ -110,7 +110,7 @@
                     @endif
                 @endif
             </div>
-            <h1 class="mt-3 font-serif text-3xl font-bold tracking-tight text-primary-950 sm:text-[2rem]">{{ $product->name }}</h1>
+            <h1 class="product-title mt-3 text-[28px] font-semibold tracking-tight text-primary-950 sm:text-[2rem]">{{ $product->name }}</h1>
             <div class="mt-2 flex items-center gap-2">
                 <div class="flex items-center gap-0.5 text-amber-400" aria-hidden="true">
                     @for ($i = 1; $i <= 5; $i++)
@@ -138,12 +138,15 @@
             <div class="mt-4 flex flex-wrap items-baseline gap-3">
                 @if ($product->hasActiveDiscount())
                     <span class="text-xl font-medium tabular-nums text-neutral-400 line-through sm:text-2xl">{{ format_ghs($product->listPrice()) }}</span>
-                    <p class="text-3xl font-semibold text-neutral-900">{{ format_ghs($product->effectivePrice()) }}</p>
+                    <p class="product-price text-3xl font-semibold text-neutral-900">{{ format_ghs($product->effectivePrice()) }}</p>
                 @else
-                    <p class="text-3xl font-semibold text-neutral-900">{{ format_ghs($product->price) }}</p>
+                    <p class="product-price text-3xl font-semibold text-neutral-900">{{ format_ghs($product->price) }}</p>
                 @endif
             </div>
             <p class="mt-1 text-xs text-neutral-500">Price in Ghana cedis ({{ config('store.currency_code') }}).</p>
+            <p class="mt-4 line-clamp-3 text-sm leading-relaxed text-neutral-600">
+                {{ $product->description ? \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/u', ' ', strip_tags($product->description))), 180) : 'Premium device with trusted quality and fast nationwide delivery.' }}
+            </p>
 
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-neutral-600">
                 <a href="#product-shipping" class="inline-flex items-center gap-1.5 transition hover:text-primary-800">
@@ -157,7 +160,7 @@
             </div>
 
             {{-- Size (display only) --}}
-            <div class="mt-8">
+            <div class="variant-group mt-8">
                 <p class="text-sm text-neutral-800">Size <span class="text-neutral-400">:</span></p>
                 <div class="mt-2 flex flex-wrap gap-2">
                     <button type="button" class="storage-opt rounded-md border-2 border-primary-900 bg-white px-4 py-2 text-sm font-medium text-neutral-900" data-storage="128">128GB</button>
@@ -166,7 +169,7 @@
             </div>
 
             @if ($images->count() > 1)
-                <div class="mt-8">
+                <div class="variant-group mt-8">
                     <p class="text-sm text-neutral-800">Color <span class="text-neutral-400">:</span></p>
                     <div class="mt-3 flex flex-wrap gap-3">
                         @foreach ($images as $idx => $image)
@@ -240,7 +243,7 @@
                     <button
                         type="submit"
                         form="add-cart-form"
-                        class="min-h-[48px] flex-1 bg-primary-900 px-6 py-3 text-center text-xs font-semibold uppercase tracking-[0.15em] text-white transition hover:bg-primary-950 sm:min-w-[200px]"
+                        class="add-to-cart min-h-[52px] w-full rounded-xl bg-black px-6 py-3 text-center text-xs font-semibold uppercase tracking-[0.15em] text-white transition duration-200 hover:bg-neutral-900 sm:min-w-[200px]"
                     >
                         Add to cart
                     </button>
@@ -259,7 +262,7 @@
                 <button
                     type="submit"
                     form="buy-now-form"
-                    class="mt-4 w-full bg-primary-100 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary-950 ring-1 ring-primary-200/80 transition hover:bg-primary-200"
+                    class="buy-now mt-4 w-full rounded-xl bg-neutral-100 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary-950 ring-1 ring-neutral-200 transition duration-200 hover:bg-neutral-200"
                 >
                     Buy it now
                 </button>
@@ -269,7 +272,13 @@
                 </p>
             @endif
 
-            <dl class="mt-10 grid gap-3 border-t border-neutral-200 pt-8 text-sm text-neutral-600 sm:grid-cols-2">
+            <div class="mt-6 grid gap-2 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-700 ring-1 ring-neutral-200/70">
+                <p class="inline-flex items-center gap-2"><span class="text-emerald-600">✔</span> Free Delivery</p>
+                <p class="inline-flex items-center gap-2"><span class="text-emerald-600">✔</span> Secure Payment</p>
+                <p class="inline-flex items-center gap-2"><span class="text-emerald-600">✔</span> 7-Day Return Policy</p>
+            </div>
+
+            <dl class="mt-8 grid gap-3 border-t border-neutral-200 pt-8 text-sm text-neutral-600 sm:grid-cols-2">
                 <div>
                     <dt class="text-xs font-semibold uppercase tracking-wider text-neutral-400">SKU</dt>
                     <dd class="mt-0.5 font-medium text-neutral-800">DC-{{ str_pad((string) $product->id, 5, '0', STR_PAD_LEFT) }}</dd>
@@ -300,8 +309,8 @@
     <section class="mt-12 pt-10 lg:mt-14 lg:pt-12">
         <div class="flex flex-wrap gap-6 border-b border-neutral-200">
             <button type="button" class="product-tab border-b-2 border-primary-800 pb-3 text-sm font-semibold text-primary-950" data-tab="desc">Description</button>
-            <button type="button" class="product-tab border-b-2 border-transparent pb-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800" data-tab="review">Review</button>
-            <button type="button" class="product-tab border-b-2 border-transparent pb-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800" data-tab="custom">Custom tab</button>
+            <button type="button" class="product-tab border-b-2 border-transparent pb-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800" data-tab="specs">Specifications</button>
+            <button type="button" class="product-tab border-b-2 border-transparent pb-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800" data-tab="review">Reviews</button>
         </div>
 
         <div id="panel-desc" class="product-panel mt-8 text-sm leading-relaxed text-neutral-700">
@@ -313,6 +322,29 @@
             <div id="product-shipping" class="mt-8 rounded-sm border border-neutral-100 bg-neutral-50/80 p-5">
                 <h3 class="text-sm font-bold text-primary-950">Shipping</h3>
                 <p class="mt-2 text-neutral-600">We ship nationwide. Orders are processed within 1–2 business days. You will receive tracking details by email once your order ships.</p>
+            </div>
+        </div>
+
+        <div id="panel-specs" class="product-panel mt-8 hidden text-sm text-neutral-600">
+            <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+                <dl class="divide-y divide-neutral-100">
+                    <div class="grid grid-cols-[150px_1fr] gap-4 px-5 py-3">
+                        <dt class="text-neutral-500">Product</dt>
+                        <dd class="font-medium text-neutral-900">{{ $product->name }}</dd>
+                    </div>
+                    <div class="grid grid-cols-[150px_1fr] gap-4 px-5 py-3">
+                        <dt class="text-neutral-500">Category</dt>
+                        <dd class="font-medium text-neutral-900">{{ $product->category->name }}</dd>
+                    </div>
+                    <div class="grid grid-cols-[150px_1fr] gap-4 px-5 py-3">
+                        <dt class="text-neutral-500">Stock</dt>
+                        <dd class="font-medium text-neutral-900">{{ $product->stock > 0 ? $product->stock.' available' : 'Out of stock' }}</dd>
+                    </div>
+                    <div class="grid grid-cols-[150px_1fr] gap-4 px-5 py-3">
+                        <dt class="text-neutral-500">SKU</dt>
+                        <dd class="font-medium text-neutral-900">DC-{{ str_pad((string) $product->id, 5, '0', STR_PAD_LEFT) }}</dd>
+                    </div>
+                </dl>
             </div>
         </div>
 
@@ -373,10 +405,6 @@
             </div>
         </div>
 
-        <div id="panel-custom" class="product-panel mt-8 hidden text-sm leading-relaxed text-neutral-700">
-            <p class="font-medium text-primary-950">Warranty & support</p>
-            <p class="mt-2 text-neutral-600">Genuine products are backed by our store support. Contact us for warranty questions or returns within the policy window.</p>
-        </div>
     </section>
 
     @if ($relatedProducts->isNotEmpty())
@@ -541,7 +569,7 @@
             });
 
             var tabs = document.querySelectorAll('.product-tab');
-            var panels = { desc: document.getElementById('panel-desc'), review: document.getElementById('panel-review'), custom: document.getElementById('panel-custom') };
+            var panels = { desc: document.getElementById('panel-desc'), specs: document.getElementById('panel-specs'), review: document.getElementById('panel-review') };
             tabs.forEach(function (tab) {
                 tab.addEventListener('click', function () {
                     var name = tab.getAttribute('data-tab');
