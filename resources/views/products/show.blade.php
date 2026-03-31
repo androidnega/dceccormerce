@@ -122,7 +122,7 @@
                 </span>
                 <span class="text-sm text-neutral-500">({{ $ratingsCount }} {{ $ratingsCount === 1 ? 'rating' : 'ratings' }})</span>
             </div>
-            <p class="mt-2 text-xs font-medium text-emerald-700">
+            <p class="mt-2 text-xs font-medium text-emerald-700" data-live-watchers data-watchers-url="{{ route('products.watchers', $product) }}">
                 {{ $watchingNow }} {{ $watchingNow === 1 ? 'person is' : 'people are' }} viewing this right now.
             </p>
 
@@ -636,6 +636,31 @@
                     });
                 });
             });
+
+            var liveWatchersEl = document.querySelector('[data-live-watchers]');
+            if (liveWatchersEl) {
+                var watchersUrl = liveWatchersEl.getAttribute('data-watchers-url');
+                var watchersTimer = null;
+                var updateWatchers = function () {
+                    if (!watchersUrl) return;
+                    fetch(watchersUrl, {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        credentials: 'same-origin'
+                    })
+                        .then(function (res) { return res.ok ? res.json() : null; })
+                        .then(function (data) {
+                            if (!data || typeof data.label !== 'string') return;
+                            liveWatchersEl.textContent = data.label;
+                        })
+                        .catch(function () {});
+                };
+                updateWatchers();
+                watchersTimer = window.setInterval(updateWatchers, 10000);
+                window.addEventListener('beforeunload', function () {
+                    if (watchersTimer) window.clearInterval(watchersTimer);
+                });
+            }
         })();
     </script>
 @endpush

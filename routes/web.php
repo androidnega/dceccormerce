@@ -41,6 +41,7 @@ Route::get('/', [ProductController::class, 'index'])->name('home');
 Route::get('/shop', [ProductController::class, 'catalog'])->name('products.index');
 Route::get('/shop/category/{category:slug}', [ProductController::class, 'category'])->name('shop.category');
 Route::get('/shop/product/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/shop/product/{product}/watchers', [ProductController::class, 'watchers'])->name('products.watchers');
 Route::post('/shop/product/{product}/rate', [ProductController::class, 'rate'])->middleware('auth')->name('products.rate');
 Route::get('/shop/product/{product}/quick-view', [ProductController::class, 'quickView'])->name('products.quick-view');
 Route::get('/shop/product/{product}/image/{productImage}', [ProductController::class, 'imageOpen'])->name('products.image.open');

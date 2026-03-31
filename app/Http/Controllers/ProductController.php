@@ -609,6 +609,18 @@ class ProductController extends Controller
         return count($viewers);
     }
 
+    public function watchers(Request $request, Product $product): JsonResponse
+    {
+        abort_unless($product->is_active, 404);
+
+        $count = $this->trackLiveViewers($request, $product);
+
+        return response()->json([
+            'count' => $count,
+            'label' => $count.' '.($count === 1 ? 'person is' : 'people are').' viewing this right now.',
+        ]);
+    }
+
     public function rate(Request $request, Product $product): RedirectResponse
     {
         abort_unless($product->is_active, 404);
