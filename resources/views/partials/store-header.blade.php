@@ -71,7 +71,7 @@
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
                 </button>
                 <a href="{{ route('home') }}" class="group flex min-w-0 items-center gap-2 text-white transition-colors hover:text-[#ffd700]">
-                    <span class="truncate text-2xl font-extrabold tracking-tight lowercase sm:text-[1.65rem]">{{ $storeName }}</span>
+                    <span class="truncate text-2xl font-extrabold tracking-tight sm:text-[1.65rem]">{{ $storeName }}</span>
                 </a>
             </div>
 
