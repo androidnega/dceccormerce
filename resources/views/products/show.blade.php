@@ -288,7 +288,7 @@
                     <dd class="mt-0.5 font-medium text-neutral-800">{{ $product->category->name }}</dd>
                 </div>
                 <div>
-                    <dt class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Vendor</dt>
+                    <dt class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Store</dt>
                     <dd class="mt-0.5 font-medium text-neutral-800">{{ config('app.name') }}</dd>
                 </div>
             </dl>
