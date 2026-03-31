@@ -1,0 +1,45 @@
+HOW DELIVERY WORKS — SIMPLE GUIDE
+=================================
+
+This document explains the delivery system in everyday language for customers (buyers) and for people running the store (admins / managers).
+
+
+FOR THE BUYER (CUSTOMER)
+------------------------
+
+1. When you place an order, you choose how you want to get your items. The store may offer things like:
+   - Pick up at the store yourself
+   - Delivery by courier or rider to your address
+   - Sometimes a “manual” or in-house option where the store handles it without the usual courier steps
+
+2. After checkout you get an order number. You can use it on the “Track order” page to see where things stand. The steps you see depend on what you chose:
+   - Pickup: something like “placed → confirmed → ready for pickup → collected”
+   - Courier: more steps including when someone is assigned and when the package is on the way
+   - Manual / in-house: fewer steps, focused on confirm, prepare, and complete
+
+3. The page updates as the store moves your order forward. You might also see a short message from the store (notes they add for you).
+
+4. If something goes wrong with delivery, the status can show a problem; the store may ask you to contact them.
+
+5. When the order is successfully finished (picked up or delivered), the timeline shows completion.
+
+
+FOR THE ADMIN OR MANAGER
+-------------------------
+
+1. Every order belongs to one “fulfillment channel” the system figures out from how the customer checked out:
+   - Store pickup
+   - Manual / in-house dispatch (your team handles it without assigning a courier agent in the system)
+   - Courier delivery (assign agents or riders, “on the way,” etc.)
+
+2. The admin order screen shows a fulfillment timeline that matches that channel. You use the buttons in order (Confirm → Prepare → assign courier if needed → On the way → Delivered, or the shorter path for pickup/manual) so the customer’s tracking stays accurate.
+
+3. For courier orders, you assign a delivery agent that matches the delivery method. If no agent appears, you add one under Delivery agents in the dashboard.
+
+4. Internal notes are for your team only; they help you remember calls, special instructions, or problems.
+
+5. “Mark failed” is for when delivery cannot be completed. The system remembers what step you were on so you can explain or fix the situation. “Mark delivered” closes the order successfully.
+
+6. The orders list includes a “Fulfillment” column so you can see at a glance whether an order is pickup, in-house, or courier, next to payment and delivery status.
+
+That’s the whole idea: buyers see a clear, channel-appropriate progress line; staff use the same statuses in the dashboard so everyone stays in sync.

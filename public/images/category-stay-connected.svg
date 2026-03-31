@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Laptop">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7a9f8f"/>
+      <stop offset="100%" style="stop-color:#4d6b62"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg2)"/>
+  <!-- Open laptop (matches MacBook / laptop category cards) -->
+  <g fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
+    <path d="M160 380 L640 380 L620 440 L180 440 Z"/>
+    <path d="M200 380 L200 220 C200 200 215 185 235 185 L565 185 C585 185 600 200 600 220 L600 380"/>
+    <rect x="240" y="220" width="320" height="200" rx="12" ry="12"/>
+  </g>
+</svg>

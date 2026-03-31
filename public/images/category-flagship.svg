@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Smartwatch">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c97a82"/>
+      <stop offset="100%" style="stop-color:#8f4a52"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg1)"/>
+  <!-- Watch face + band (matches wearables / Apple Watch style cards) -->
+  <g fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
+    <path d="M320 420 L320 480 C320 500 340 520 400 520 C460 520 480 500 480 480 L480 420"/>
+    <path d="M320 180 L320 120 C320 100 340 80 400 80 C460 80 480 100 480 120 L480 180"/>
+    <rect x="300" y="180" width="200" height="240" rx="48" ry="48"/>
+    <circle cx="400" cy="300" r="56"/>
+  </g>
+</svg>
