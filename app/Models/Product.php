@@ -45,6 +45,14 @@ class Product extends Model
     }
 
     /**
+     * @return HasMany<ProductRating, $this>
+     */
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(ProductRating::class);
+    }
+
+    /**
      * @param  Builder<Product>  $query
      * @return Builder<Product>
      */
@@ -141,5 +149,20 @@ class Product extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    public function averageRating(): float
+    {
+        $avg = $this->ratings_avg_rating;
+        if ($avg === null) {
+            return 0.0;
+        }
+
+        return round((float) $avg, 1);
+    }
+
+    public function totalRatings(): int
+    {
+        return (int) ($this->ratings_count ?? 0);
     }
 }

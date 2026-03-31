@@ -17,7 +17,7 @@
                             <li><a href="{{ route('home') }}" class="transition hover:text-white">All phones</a></li>
                             @foreach ($footerCategories as $cat)
                                 <li>
-                                    <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="transition hover:text-white">{{ $cat->name }}</a>
+                                    <a href="{{ route('shop.category', $cat) }}" class="transition hover:text-white">{{ $cat->name }}</a>
                                 </li>
                             @endforeach
                         </ul>

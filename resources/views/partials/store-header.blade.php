@@ -259,7 +259,7 @@
                             <p class="mt-1 text-[13px] text-slate-500">Pick a category — filters and price range are on the store page.</p>
                             <div class="mt-6 grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
                                 @foreach ($categoriesCollection as $cat)
-                                    <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="flex items-center gap-2 rounded-lg py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:text-[#0057b8]">
+                                    <a href="{{ route('shop.category', $cat) }}" class="flex items-center gap-2 rounded-lg py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:text-[#0057b8]">
                                         <i class="{{ category_fa_classes($cat->slug, $cat->name) }} w-5 shrink-0 text-center text-[14px] text-slate-400" aria-hidden="true"></i>
                                         <span>{{ $cat->name }}</span>
                                     </a>
@@ -329,7 +329,7 @@
                                 <ul class="mt-3 space-y-2 text-[13px] text-slate-600">
                                     @foreach ($colCats as $cat)
                                         <li>
-                                            <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="transition-colors hover:text-[#0057b8]">{{ $cat->name }}</a>
+                                            <a href="{{ route('shop.category', $cat) }}" class="transition-colors hover:text-[#0057b8]">{{ $cat->name }}</a>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -355,7 +355,7 @@
                 <a href="{{ route('home') }}#features" class="rounded-xl px-3 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">Why shop with us</a>
                 <p class="px-3 pt-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Categories</p>
                 @foreach (($categories ?? collect())->take(12) as $cat)
-                    <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="rounded-xl px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-[#ffd700]">{{ $cat->name }}</a>
+                    <a href="{{ route('shop.category', $cat) }}" class="rounded-xl px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-[#ffd700]">{{ $cat->name }}</a>
                 @endforeach
                 <p class="mt-2 border-t border-slate-100 px-3 pt-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">More</p>
                 <a href="mailto:{{ config('store.email') }}" class="rounded-xl px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50">Contact us</a>

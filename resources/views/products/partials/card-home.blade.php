@@ -88,7 +88,7 @@
         <div class="relative aspect-[4/5] overflow-hidden bg-zinc-100">
             <a href="{{ route('products.show', $product) }}" class="relative z-0 block h-full w-full">
                 @if ($img)
-                    <img src="{{ $img->url() }}" alt="{{ $product->name }}" class="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.03]">
+                    <img src="{{ $img->url() }}" alt="{{ $product->name }}" class="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.08]">
                 @else
                     <div class="flex h-full min-h-[12rem] items-center justify-center text-sm text-zinc-400">No image</div>
                 @endif
@@ -140,7 +140,7 @@
     @else
     <a href="{{ route('products.show', $product) }}" class="relative block aspect-[4/3] overflow-hidden bg-zinc-100">
         @if ($img)
-            <img src="{{ $img->url() }}" alt="{{ $product->name }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]">
+            <img src="{{ $img->url() }}" alt="{{ $product->name }}" class="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.08]">
         @else
             <div class="flex h-full items-center justify-center text-sm text-zinc-400">No image</div>
         @endif

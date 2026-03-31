@@ -9,12 +9,20 @@
         $images = $product->images;
         $primary = $images->first();
         $primaryUrl = $primary ? $primary->url() : '';
+        $avgRating = $product->averageRating();
+        $ratingsCount = $product->totalRatings();
     @endphp
+
+    @if (session('success'))
+        <div class="mb-4 rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {{ session('success') }}
+        </div>
+    @endif
 
     <nav class="mb-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-neutral-500" aria-label="Breadcrumb">
         <a href="{{ route('home') }}" class="transition hover:text-primary-800">Home</a>
         <span class="text-neutral-300" aria-hidden="true">/</span>
-        <a href="{{ route('products.index', ['category' => $product->category->slug]) }}" class="transition hover:text-primary-800">{{ $product->category->name }}</a>
+        <a href="{{ route('shop.category', $product->category) }}" class="transition hover:text-primary-800">{{ $product->category->name }}</a>
         <span class="text-neutral-300" aria-hidden="true">/</span>
         <span class="font-medium text-neutral-800">{{ $product->name }}</span>
     </nav>
@@ -103,6 +111,17 @@
                 @endif
             </div>
             <h1 class="mt-3 font-serif text-3xl font-bold tracking-tight text-primary-950 sm:text-[2rem]">{{ $product->name }}</h1>
+            <div class="mt-2 flex items-center gap-2">
+                <div class="flex items-center gap-0.5 text-amber-400" aria-hidden="true">
+                    @for ($i = 1; $i <= 5; $i++)
+                        <svg class="h-4 w-4 {{ $i <= round($avgRating) ? 'text-amber-400' : 'text-neutral-200' }}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    @endfor
+                </div>
+                <span class="text-sm font-medium text-neutral-700">
+                    {{ $ratingsCount > 0 ? number_format($avgRating, 1).' / 5' : 'No ratings yet' }}
+                </span>
+                <span class="text-sm text-neutral-500">({{ $ratingsCount }} {{ $ratingsCount === 1 ? 'rating' : 'ratings' }})</span>
+            </div>
 
             <p class="mt-3 text-sm">
                 <span class="font-medium text-neutral-600">Availability:</span>
@@ -298,7 +317,60 @@
         </div>
 
         <div id="panel-review" class="product-panel mt-8 hidden text-sm text-neutral-600">
-            <p>No reviews yet. Be the first to share your experience with this product.</p>
+            <div class="grid gap-8 lg:grid-cols-[1fr_340px] lg:gap-10">
+                <div>
+                    @if ($product->ratings->isEmpty())
+                        <p>No reviews yet. Be the first to share your experience with this product.</p>
+                    @else
+                        <div class="space-y-4">
+                            @foreach ($product->ratings as $rating)
+                                <article class="rounded-sm border border-neutral-200 bg-white p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <p class="text-sm font-semibold text-neutral-900">{{ $rating->user->name }}</p>
+                                        <div class="flex items-center gap-0.5 text-amber-400" aria-label="{{ $rating->rating }} out of 5">
+                                            @for ($i = 1; $i <= 5; $i++)
+                                                <svg class="h-3.5 w-3.5 {{ $i <= $rating->rating ? 'text-amber-400' : 'text-neutral-200' }}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                    <p class="mt-1 text-xs text-neutral-500">{{ $rating->created_at?->diffForHumans() }}</p>
+                                    @if ($rating->review)
+                                        <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-neutral-700">{{ $rating->review }}</p>
+                                    @endif
+                                </article>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <aside class="rounded-sm border border-neutral-200 bg-neutral-50/70 p-4 sm:p-5">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-neutral-800">Rate this product</h3>
+                    @auth
+                        <form action="{{ route('products.rate', $product) }}" method="post" class="mt-4 space-y-3">
+                            @csrf
+                            <div>
+                                <label for="rating-value" class="text-xs font-semibold uppercase tracking-wide text-neutral-500">Your rating</label>
+                                <select id="rating-value" name="rating" class="mt-1.5 h-10 w-full rounded-sm border border-neutral-300 bg-white px-3 text-sm text-neutral-900 focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20">
+                                    @for ($i = 5; $i >= 1; $i--)
+                                        <option value="{{ $i }}" @selected(old('rating', $userRating->rating ?? 5) == $i)>{{ $i }} {{ $i === 1 ? 'star' : 'stars' }}</option>
+                                    @endfor
+                                </select>
+                                @error('rating')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="rating-review" class="text-xs font-semibold uppercase tracking-wide text-neutral-500">Review (optional)</label>
+                                <textarea id="rating-review" name="review" rows="4" class="mt-1.5 w-full rounded-sm border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20" placeholder="Share your experience">{{ old('review', $userRating->review ?? '') }}</textarea>
+                                @error('review')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <button type="submit" class="inline-flex h-10 items-center justify-center rounded-sm bg-primary-900 px-4 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-primary-950">
+                                {{ $userRating ? 'Update rating' : 'Submit rating' }}
+                            </button>
+                        </form>
+                    @else
+                        <p class="mt-3 text-sm text-neutral-600">Please <a href="{{ route('login') }}" class="font-medium text-primary-800 underline">log in</a> to submit a rating.</p>
+                    @endauth
+                </aside>
+            </div>
         </div>
 
         <div id="panel-custom" class="product-panel mt-8 hidden text-sm leading-relaxed text-neutral-700">

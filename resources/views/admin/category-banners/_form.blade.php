@@ -45,7 +45,7 @@
             <label class="block text-sm font-medium text-zinc-800">Link</label>
             <input type="text" name="link" value="{{ old('link', $banner?->link) }}" maxlength="2048"
                 class="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200"
-                placeholder="/products?category=iphones">
+                placeholder="/shop/category/iphones">
         </div>
 
         <div>

@@ -8,6 +8,7 @@
     $inWishlist = \App\Support\WishlistSession::has($product->id);
     $showCategory = $showCategory ?? false;
     $trendingStrip = $trendingStrip ?? false;
+    $catalogPage = $catalogPage ?? false;
     $layout = ($forceGridLayout ?? false) ? StoreProductDisplaySetting::LAYOUT_GRID : $pd->product_layout;
     $size = $pd->card_size;
     $isList = $layout === StoreProductDisplaySetting::LAYOUT_LIST;
@@ -68,14 +69,14 @@
                         <img
                             src="{{ $img->url() }}"
                             alt=""
-                            class="max-h-full max-w-full object-contain transition-opacity duration-300 ease-out group-hover:opacity-0"
+                            class="max-h-full max-w-full object-contain transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform] group-hover:scale-[1.04] group-hover:opacity-0"
                             loading="lazy"
                             decoding="async"
                         >
                         <img
                             src="{{ $img2->url() }}"
                             alt=""
-                            class="absolute inset-3 max-h-[calc(100%-1.5rem)] max-w-[calc(100%-1.5rem)] object-contain opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+                            class="absolute inset-3 max-h-[calc(100%-1.5rem)] max-w-[calc(100%-1.5rem)] object-contain opacity-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform] scale-[0.985] group-hover:scale-[1.06] group-hover:opacity-100"
                             loading="lazy"
                             decoding="async"
                         >
@@ -85,7 +86,7 @@
                             alt=""
                             @class([
                                 'max-h-full max-w-full object-contain',
-                                'transition duration-300 ease-out group-hover:scale-[1.04]' => ! $trendingStrip,
+                                'transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.08]' => ! $trendingStrip,
                             ])
                             loading="lazy"
                             decoding="async"
@@ -209,5 +210,5 @@
     </div>
 </article>
 @else
-    @include('products.partials.product-card-sleek', ['product' => $product, 'productDisplay' => $pd, 'showCategory' => $showCategory ?? false])
+    @include('products.partials.product-card-sleek', ['product' => $product, 'productDisplay' => $pd, 'showCategory' => $showCategory ?? false, 'catalogPage' => $catalogPage])
 @endif

@@ -51,7 +51,7 @@ class NewsPostController extends Controller
             'headline' => $validated['headline'],
             'published_at' => $validated['published_at'],
             'image_path' => $path,
-            'link_url' => $validated['link_url'] ?? '/products#store-search',
+            'link_url' => $validated['link_url'] ?? '/shop#store-search',
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => $request->boolean('is_active', true),
         ]);
@@ -93,7 +93,7 @@ class NewsPostController extends Controller
             'headline' => $validated['headline'],
             'published_at' => $validated['published_at'],
             'image_path' => $path,
-            'link_url' => $validated['link_url'] ?? '/products#store-search',
+            'link_url' => $validated['link_url'] ?? '/shop#store-search',
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => $request->boolean('is_active', true),
         ]);

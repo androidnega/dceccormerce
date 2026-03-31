@@ -9,6 +9,7 @@ use App\Models\HomepageSetting;
 use App\Models\NewsPost;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductRating;
 use App\Models\SaleSpotlightCard;
 use App\Models\StoreProductDisplaySetting;
 use Illuminate\Http\JsonResponse;
@@ -205,24 +206,33 @@ class ProductController extends Controller
         $minPrice = is_numeric($request->query('min_price')) ? (float) $request->query('min_price') : null;
         $maxPrice = is_numeric($request->query('max_price')) ? (float) $request->query('max_price') : null;
 
-        $baseQuery = Product::query()->active()->with(['category', 'images']);
+        $applyCatalogFilters = function ($query) use ($search, $categorySlug, $color): void {
+            if ($search !== '') {
+                $escaped = addcslashes($search, '%_\\');
+                $query->where('name', 'like', '%'.$escaped.'%');
+            }
 
-        if ($search !== '') {
-            $escaped = addcslashes($search, '%_\\');
-            $baseQuery->where('name', 'like', '%'.$escaped.'%');
-        }
+            if ($categorySlug !== '') {
+                $query->whereHas('category', function ($q) use ($categorySlug) {
+                    $q->where('slug', $categorySlug);
+                });
+            }
 
-        if ($categorySlug !== '') {
-            $baseQuery->whereHas('category', function ($q) use ($categorySlug) {
-                $q->where('slug', $categorySlug);
-            });
-        }
+            if ($color !== '') {
+                $query->where('name', 'like', '%'.$color.'%');
+            }
+        };
 
-        if ($color !== '') {
-            $baseQuery->where('name', 'like', '%'.$color.'%');
-        }
+        $baseQuery = Product::query()
+            ->active()
+            ->with(['category', 'images'])
+            ->withAvg('ratings', 'rating')
+            ->withCount('ratings');
+        $applyCatalogFilters($baseQuery);
 
-        $boundsRow = (clone $baseQuery)->selectRaw('MIN(price) as min_price, MAX(price) as max_price')->first();
+        $boundsQuery = Product::query()->active();
+        $applyCatalogFilters($boundsQuery);
+        $boundsRow = $boundsQuery->selectRaw('MIN(price) as min_price, MAX(price) as max_price')->first();
         $rawMin = $boundsRow?->min_price;
         $rawMax = $boundsRow?->max_price;
 
@@ -310,6 +320,14 @@ class ProductController extends Controller
         ]);
     }
 
+    public function category(Request $request, Category $category): View
+    {
+        $query = array_merge($request->query(), ['category' => $category->slug]);
+        $categoryRequest = $request->duplicate($query);
+
+        return $this->catalog($categoryRequest);
+    }
+
     /**
      * Featured strip and Fresh picks: prefer products in the current category when filtered.
      * Falls back to store-wide when the category has no matches.
@@ -318,7 +336,11 @@ class ProductController extends Controller
      */
     private function catalogContextProducts(?string $categorySlug, int $limit): Collection
     {
-        $q = Product::query()->active()->with(['category', 'images']);
+        $q = Product::query()
+            ->active()
+            ->with(['category', 'images'])
+            ->withAvg('ratings', 'rating')
+            ->withCount('ratings');
         if ($categorySlug !== '') {
             $q->whereHas('category', function ($q2) use ($categorySlug) {
                 $q2->where('slug', $categorySlug);
@@ -326,7 +348,14 @@ class ProductController extends Controller
         }
         $list = $q->latest()->limit($limit)->get();
         if ($list->isEmpty() && $categorySlug !== '') {
-            return Product::query()->active()->with(['category', 'images'])->latest()->limit($limit)->get();
+            return Product::query()
+                ->active()
+                ->with(['category', 'images'])
+                ->withAvg('ratings', 'rating')
+                ->withCount('ratings')
+                ->latest()
+                ->limit($limit)
+                ->get();
         }
 
         return $list;
@@ -451,18 +480,53 @@ class ProductController extends Controller
     {
         abort_unless($product->is_active, 404);
 
-        $product->load(['category', 'images']);
+        $product->load([
+            'category',
+            'images',
+            'ratings' => fn ($q) => $q->with('user')->latest()->limit(20),
+        ])->loadAvg('ratings', 'rating')->loadCount('ratings');
 
         $relatedProducts = Product::query()
             ->active()
             ->where('category_id', $product->category_id)
             ->whereKeyNot($product->getKey())
             ->with(['category', 'images'])
+            ->withAvg('ratings', 'rating')
+            ->withCount('ratings')
             ->latest()
             ->limit(4)
             ->get();
 
-        return view('products.show', compact('product', 'relatedProducts'));
+        $userRating = auth()->check()
+            ? $product->ratings()->where('user_id', auth()->id())->first()
+            : null;
+
+        return view('products.show', compact('product', 'relatedProducts', 'userRating'));
+    }
+
+    public function rate(Request $request, Product $product): RedirectResponse
+    {
+        abort_unless($product->is_active, 404);
+
+        $validated = $request->validate([
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'review' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        ProductRating::query()->updateOrCreate(
+            [
+                'product_id' => $product->id,
+                'user_id' => (int) $request->user()->id,
+            ],
+            [
+                'rating' => (int) $validated['rating'],
+                'review' => trim((string) ($validated['review'] ?? '')) ?: null,
+            ]
+        );
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', 'Your rating has been saved.');
     }
 
     public function imageOpen(Product $product, ProductImage $productImage): View

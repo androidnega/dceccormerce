@@ -38,10 +38,16 @@ Route::get('/admin/{path}', function (string $path) {
 })->where('path', '.*');
 
 Route::get('/', [ProductController::class, 'index'])->name('home');
-Route::get('/products', [ProductController::class, 'catalog'])->name('products.index');
-Route::get('/product/{product}', [ProductController::class, 'show'])->name('products.show');
-Route::get('/product/{product}/quick-view', [ProductController::class, 'quickView'])->name('products.quick-view');
-Route::get('/product/{product}/image/{productImage}', [ProductController::class, 'imageOpen'])->name('products.image.open');
+Route::get('/shop', [ProductController::class, 'catalog'])->name('products.index');
+Route::get('/shop/category/{category:slug}', [ProductController::class, 'category'])->name('shop.category');
+Route::get('/shop/product/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::post('/shop/product/{product}/rate', [ProductController::class, 'rate'])->middleware('auth')->name('products.rate');
+Route::get('/shop/product/{product}/quick-view', [ProductController::class, 'quickView'])->name('products.quick-view');
+Route::get('/shop/product/{product}/image/{productImage}', [ProductController::class, 'imageOpen'])->name('products.image.open');
+Route::get('/products', fn () => redirect()->route('products.index', request()->query(), 301));
+Route::get('/product/{product}', fn ($product) => redirect()->route('products.show', ['product' => $product], 301));
+Route::get('/product/{product}/quick-view', fn ($product) => redirect()->route('products.quick-view', ['product' => $product], 301));
+Route::get('/product/{product}/image/{productImage}', fn ($product, $productImage) => redirect()->route('products.image.open', ['product' => $product, 'productImage' => $productImage], 301));
 
 Route::post('/wishlist/toggle/{id}', [WishlistController::class, 'toggle'])->name('wishlist.toggle')->whereNumber('id');
 

@@ -6,11 +6,14 @@
     $inStock = $product->stock > 0;
     $inWishlist = \App\Support\WishlistSession::has($product->id);
     $showCategory = $showCategory ?? false;
+    $catalogPage = $catalogPage ?? false;
     $size = $pd->card_size;
     $hoverActions = $pd->enable_hover_actions;
     $hasDiscount = $product->hasActiveDiscount();
     $disc = $product->discountBadgeLabel();
-    $stars = 4 + ($product->id % 2);
+    $stars = $product->totalRatings() > 0
+        ? (int) round($product->averageRating())
+        : 4 + ($product->id % 2);
 
     $titleClass = match ($size) {
         StoreProductDisplaySetting::CARD_SMALL => 'text-[12px] sm:text-[13px]',
@@ -27,12 +30,18 @@
     data-product-card
     data-product-card-sleek
     @class([
-        'group relative flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white transition-[border-color,box-shadow] duration-300 max-sm:rounded-lg sm:min-h-[17rem] md:min-h-[19rem] lg:min-h-[20.5rem]',
+        'group relative flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white transition-[border-color,box-shadow] duration-300 max-sm:rounded-lg',
+        'sm:min-h-[16.25rem] md:min-h-[18rem] lg:min-h-[19.5rem]' => $catalogPage,
+        'sm:min-h-[17rem] md:min-h-[19rem] lg:min-h-[20.5rem]' => ! $catalogPage,
         'border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#C85045] hover:shadow-[0_4px_24px_-8px_rgba(200,80,69,0.15)]' => $hoverActions,
         'border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)]' => ! $hoverActions,
     ])
 >
-    <div class="relative shrink-0 bg-white px-2.5 pb-0.5 pt-2 sm:px-5 sm:pb-1 sm:pt-5">
+    <div @class([
+        'relative shrink-0 bg-white px-2.5 pb-0.5 pt-2',
+        'sm:px-4 sm:pb-0.5 sm:pt-4' => $catalogPage,
+        'sm:px-5 sm:pb-1 sm:pt-5' => ! $catalogPage,
+    ])>
         @if ($disc && $inStock && $hasDiscount)
             <span
                 @class([
@@ -50,14 +59,18 @@
             </div>
         @endif
 
-        <div class="relative mx-auto flex h-24 w-full max-h-[6rem] min-h-[5.75rem] items-center justify-center sm:h-[9.25rem] sm:min-h-0 sm:max-h-none md:h-[10.25rem] lg:h-44">
+        <div @class([
+            'relative mx-auto flex h-24 w-full max-h-[6rem] min-h-[5.75rem] items-center justify-center sm:min-h-0 sm:max-h-none',
+            'sm:h-[8.75rem] md:h-[9.75rem] lg:h-[10.5rem]' => $catalogPage,
+            'sm:h-[9.25rem] md:h-[10.25rem] lg:h-44' => ! $catalogPage,
+        ])>
             @if ($inStock)
                 <a href="{{ route('products.show', $product) }}" class="absolute inset-0 z-0 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#223A94]">
                     @if ($img)
                         <img
                             src="{{ $img->url() }}"
                             alt=""
-                            class="max-h-full max-w-full object-contain object-center transition duration-300 ease-out group-hover:scale-[1.03]"
+                            class="max-h-full max-w-full object-contain object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.08]"
                             loading="lazy"
                             decoding="async"
                         >
@@ -117,12 +130,21 @@
         @endif
     </div>
 
-    <div class="flex flex-1 flex-col px-2.5 pb-2.5 pt-1 text-center sm:px-5 sm:pb-5 sm:pt-2">
+    <div @class([
+        'flex flex-1 flex-col px-2.5 pb-2.5 pt-1 text-center',
+        'sm:px-4 sm:pb-4 sm:pt-1.5' => $catalogPage,
+        'sm:px-5 sm:pb-5 sm:pt-2' => ! $catalogPage,
+    ])>
         @if ($showCategory && $product->category)
             <p class="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-400 sm:mb-1.5">{{ $product->category->name }}</p>
         @endif
         <a href="{{ route('products.show', $product) }}" class="block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#223A94] focus-visible:ring-offset-2">
-            <h3 class="min-h-0 line-clamp-2 font-semibold leading-snug tracking-tight text-neutral-900 max-sm:min-h-0 sm:min-h-[2.35rem] md:min-h-[2.6rem] {{ $titleClass }}">{{ $product->name }}</h3>
+            <h3 @class([
+                'min-h-0 line-clamp-2 font-semibold leading-snug tracking-tight text-neutral-900 max-sm:min-h-0',
+                'sm:min-h-[2.2rem] md:min-h-[2.45rem]' => $catalogPage,
+                'sm:min-h-[2.35rem] md:min-h-[2.6rem]' => ! $catalogPage,
+                $titleClass,
+            ])>{{ $product->name }}</h3>
         </a>
 
         <div class="mt-1 flex justify-center gap-0.5 text-[#FBBF24] sm:mt-2" aria-hidden="true">
@@ -155,7 +177,16 @@
         </div>
 
         @if ($inStock)
-            <form action="{{ route('cart.add', $product->id) }}" method="post" class="store-add-cart-form mt-auto pt-2 sm:pt-4" data-add-to-cart>
+            <form
+                action="{{ route('cart.add', $product->id) }}"
+                method="post"
+                @class([
+                    'store-add-cart-form mt-auto pt-2',
+                    'sm:pt-3' => $catalogPage,
+                    'sm:pt-4' => ! $catalogPage,
+                ])
+                data-add-to-cart
+            >
                 @csrf
                 <input type="hidden" name="quantity" value="1">
                 <button

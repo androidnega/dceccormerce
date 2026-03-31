@@ -47,4 +47,12 @@ class User extends Authenticatable
     {
         return $this->hasOne(Rider::class);
     }
+
+    /**
+     * @return HasMany<ProductRating, $this>
+     */
+    public function productRatings(): HasMany
+    {
+        return $this->hasMany(ProductRating::class);
+    }
 }

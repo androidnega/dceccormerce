@@ -22,7 +22,7 @@
                         <div class="home-cat-scroll flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
                             @foreach ($sidebarCategories->filter(fn ($c) => $c !== null) as $cat)
                                 <a
-                                    href="{{ route('products.index', ['category' => $cat->slug]) }}"
+                                    href="{{ route('shop.category', $cat) }}"
                                     class="snap-start shrink-0 inline-flex max-w-[11rem] items-center gap-2 rounded-full border border-neutral-200/90 bg-white py-2 pl-2 pr-3.5 text-left text-[12px] font-medium leading-tight text-neutral-800 shadow-sm ring-1 ring-black/[0.03] transition hover:border-[#1a2f4a]/40 hover:bg-white"
                                 >
                                     <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-[12px] text-[#1a2f4a]" aria-hidden="true"><i class="{{ category_fa_classes($cat->slug, $cat->name) }}"></i></span>
@@ -35,7 +35,7 @@
                     <ul class="hidden divide-y divide-neutral-200 lg:block">
                         @foreach ($sidebarCategories->filter(fn ($c) => $c !== null) as $cat)
                             <li>
-                                <a href="{{ route('products.index', ['category' => $cat->slug]) }}" class="flex items-center gap-3 px-5 py-2.5 text-[13px] leading-snug text-neutral-600 transition hover:bg-[#ffeb3b]/30 hover:text-neutral-900">
+                                <a href="{{ route('shop.category', $cat) }}" class="flex items-center gap-3 px-5 py-2.5 text-[13px] leading-snug text-neutral-600 transition hover:bg-[#ffeb3b]/30 hover:text-neutral-900">
                                     <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-[13px] text-[#1a2f4a]" aria-hidden="true"><i class="{{ category_fa_classes($cat->slug, $cat->name) }}"></i></span>
                                     <span>{{ $cat->name }}</span>
                                 </a>
@@ -158,7 +158,7 @@
         </section>
     @endif
 
-    {{-- Product browse + filters now live on /products --}}
+    {{-- Product browse + filters now live on /shop --}}
 
     @push('scripts')
         <script>

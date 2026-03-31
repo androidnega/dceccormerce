@@ -35,7 +35,7 @@
     <label class="block text-sm font-medium text-neutral-800">Link URL</label>
     <input type="text" name="link" value="{{ old('link', $section?->link) }}"
         class="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-900 shadow-sm focus:border-[#0057b8] focus:outline-none focus:ring-2 focus:ring-[#0057b8]/25"
-        placeholder="/products or https://…">
+        placeholder="/shop or https://…">
     @error('link')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
 </div>
 <div class="grid gap-4 sm:grid-cols-2">
