@@ -27,6 +27,10 @@
                     if (! $paystackReady && $paymentMethodOld === 'momo') {
                         $paymentMethodOld = 'cod';
                     }
+                    $deliveryTarget = old('delivery_target');
+                    if ($deliveryTarget === null) {
+                        $deliveryTarget = (old('recipient_same_as_contact', '1') === '1' || old('recipient_same_as_contact') === true) ? 'to_me' : 'to_other';
+                    }
                 @endphp
                 <form action="{{ route('checkout.store') }}" method="post" class="checkout-form space-y-8" id="checkout-form">
                     @csrf
@@ -36,7 +40,11 @@
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">1</span>
                             <div>
                                 <h2 class="text-lg font-semibold text-slate-900">Contact &amp; delivery</h2>
-                                <p class="mt-1 text-sm text-slate-600"><span class="font-medium text-slate-800">Guest checkout</span> — no account or email required. Tell us who to reach about the order and where it should go.</p>
+                                @auth
+                                    <p class="mt-1 text-sm text-slate-600">You’re <span class="font-medium text-slate-800">signed in</span>. We’ve pre-filled your name and email; change them if needed. <span class="font-medium text-slate-800">Delivery can go to you or to someone else</span> — use the options below. Guests can do the same without an account.</p>
+                                @else
+                                    <p class="mt-1 text-sm text-slate-600"><span class="font-medium text-slate-800">Guest checkout</span> — no account required. Tell us who to reach, then choose if the order is for you at your address or for <span class="font-medium text-slate-800">another person / location</span> (e.g. gift, office, family).</p>
+                                @endauth
                             </div>
                         </div>
 
@@ -51,7 +59,7 @@
                                                 <span class="text-sm font-normal text-slate-500">(required for Mobile Money — used by Paystack)</span>
                                             @endif
                                         </label>
-                                        <input type="email" name="email" id="email" value="{{ old('email') }}" @if($paystackReady) data-email-paystack="1" @endif autocomplete="email" placeholder="you@example.com"
+                                        <input type="email" name="email" id="email" value="{{ old('email', data_get($checkoutContactPrefill, 'email', '')) }}" @if($paystackReady) data-email-paystack="1" @endif autocomplete="email" placeholder="you@example.com"
                                             class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('email') border-red-500 ring-1 ring-red-500 @enderror">
                                         @if(!$paystackReady)
                                             <p class="mt-1 text-xs text-slate-500">Optional for cash on delivery. Required when you pay with Mobile Money online.</p>
@@ -59,8 +67,8 @@
                                         @error('email')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                     </div>
                                     <div>
-                                        <label for="full_name" class="block text-sm font-medium text-slate-700">Full name <span class="text-red-600">*</span></label>
-                                        <input type="text" name="full_name" id="full_name" value="{{ old('full_name') }}" required autocomplete="name"
+                                        <label for="full_name" class="block text-sm font-medium text-slate-700">Full name (order contact) <span class="text-red-600">*</span></label>
+                                        <input type="text" name="full_name" id="full_name" value="{{ old('full_name', data_get($checkoutContactPrefill, 'full_name', '')) }}" required autocomplete="name"
                                             class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('full_name') border-red-500 ring-1 ring-red-500 @enderror">
                                         @error('full_name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                     </div>
@@ -74,19 +82,23 @@
                             </div>
 
                             <div class="border-t border-slate-100 pt-10">
-                                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Delivery address &amp; recipient</h3>
-                                <p class="mt-1 text-sm text-slate-600" id="delivery-hint">Choose where the order should go. For <strong>delivery</strong>, the street and city/area are required. For <strong>store pickup</strong>, you can leave address blank.</p>
+                                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Where we deliver</h3>
+                                <p class="mt-1 text-sm text-slate-600" id="delivery-hint">The address below is always the <span class="font-medium text-slate-800">delivery / pickup location</span> (yours or someone else’s). For <strong>delivery to your door</strong>, fill street and city. For <strong>store pickup</strong>, you can leave address blank and choose pickup in the next step.</p>
 
-                                <div class="mt-4 rounded-xl border border-slate-200/90 bg-slate-50/60 p-4">
-                                    <input type="hidden" name="recipient_same_as_contact" value="0">
-                                    <label class="flex cursor-pointer items-start gap-3">
-                                        <input type="checkbox" name="recipient_same_as_contact" value="1" id="recipient_same_as_contact" class="mt-1 rounded border-slate-300 text-[#0057b8] focus:ring-[#0057b8]"
-                                            @checked(old('recipient_same_as_contact', '1') === '1' || old('recipient_same_as_contact') === true)>
-                                        <span class="text-sm text-slate-800"><span class="font-medium">I am receiving this order</span> <span class="text-slate-500">(deliver to me at my contact number)</span></span>
+                                <div class="mt-4 space-y-3" role="group" aria-labelledby="delivery-target-label">
+                                    <p id="delivery-target-label" class="text-sm font-medium text-slate-800">This order is for <span class="text-red-600">*</span></p>
+                                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-slate-50/60 p-4 has-[:checked]:border-[#0057b8] has-[:checked]:ring-2 has-[:checked]:ring-[#0057b8]/20">
+                                        <input type="radio" name="delivery_target" value="to_me" class="mt-1 text-[#0057b8] focus:ring-[#0057b8]" data-delivery-target @checked($deliveryTarget === 'to_me')>
+                                        <span class="text-sm text-slate-800"><span class="font-medium">Me — send to the address I enter below</span> <span class="text-slate-500">(your home, workplace, or any location you type)</span></span>
                                     </label>
+                                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-slate-50/60 p-4 has-[:checked]:border-[#0057b8] has-[:checked]:ring-2 has-[:checked]:ring-[#0057b8]/20">
+                                        <input type="radio" name="delivery_target" value="to_other" class="mt-1 text-[#0057b8] focus:ring-[#0057b8]" data-delivery-target @checked($deliveryTarget === 'to_other')>
+                                        <span class="text-sm text-slate-800"><span class="font-medium">Someone else — different person and/or different address from mine</span> <span class="text-slate-500">(gift, family, colleague; add their details and delivery address)</span></span>
+                                    </label>
+                                    @error('delivery_target')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
                                 </div>
 
-                                <div id="recipient-fields" class="mt-4 space-y-4 @if(old('recipient_same_as_contact', '1') === '1' || old('recipient_same_as_contact') === true) hidden @endif">
+                                <div id="recipient-fields" class="mt-4 space-y-4 @if($deliveryTarget === 'to_me') hidden @endif">
                                     <div>
                                         <label for="recipient_name" class="block text-sm font-medium text-slate-700">Recipient name <span class="text-red-600">*</span></label>
                                         <input type="text" name="recipient_name" id="recipient_name" value="{{ old('recipient_name') }}" data-recipient-input
@@ -335,20 +347,24 @@
             }
         })();
         (function () {
-            var cb = document.getElementById('recipient_same_as_contact');
             var wrap = document.getElementById('recipient-fields');
-            if (cb && wrap) {
-                var inputs = wrap.querySelectorAll('[data-recipient-input]');
-                function syncRecipient() {
-                    var same = cb.checked;
-                    wrap.classList.toggle('hidden', same);
-                    inputs.forEach(function (el) {
-                        el.required = !same;
-                    });
-                }
-                cb.addEventListener('change', syncRecipient);
-                syncRecipient();
+            if (!wrap) return;
+            var inputs = wrap.querySelectorAll('[data-recipient-input]');
+            function isToOther() {
+                var r = document.querySelector('input[name="delivery_target"][value="to_other"]');
+                return r && r.checked;
             }
+            function syncDeliveryTarget() {
+                var other = isToOther();
+                wrap.classList.toggle('hidden', !other);
+                inputs.forEach(function (el) {
+                    el.required = other;
+                });
+            }
+            document.querySelectorAll('input[name="delivery_target"]').forEach(function (el) {
+                el.addEventListener('change', syncDeliveryTarget);
+            });
+            syncDeliveryTarget();
         })();
         (function () {
             var cityInput = document.getElementById('city');

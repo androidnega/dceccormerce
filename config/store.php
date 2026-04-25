@@ -8,9 +8,10 @@ return [
     /** Display symbol for Ghana cedis (matches format_ghs / format_cedis). */
     'currency_symbol' => '₵',
 
-    'phone' => env('STORE_PHONE', '(0123) 456789'),
+    'phone' => env('STORE_PHONE', '+233 54 409 6292'),
 
-    'phone_tel' => env('STORE_PHONE_TEL', ''),
+    /** E.164-style number for tel: and WhatsApp (digits / leading +). */
+    'phone_tel' => env('STORE_PHONE_TEL', '+233544096292'),
 
     'email' => env('STORE_EMAIL', 'support@dcapple.com'),
 

@@ -9,6 +9,10 @@ cd "$(dirname "$0")"
 HOST="${SERVE_HOST:-0.0.0.0}"
 PORT="${SERVE_PORT:-8000}"
 
+echo "Running database migrations…"
+php artisan migrate --no-interaction --force
+echo ""
+
 echo "Starting Laravel at http://${HOST}:${PORT} (all interfaces)"
 echo ""
 

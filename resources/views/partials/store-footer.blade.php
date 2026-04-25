@@ -57,10 +57,11 @@
                 {{-- Contact --}}
                 <section id="contact" aria-labelledby="footer-heading-contact" class="flex flex-col">
                     <h2 id="footer-heading-contact" class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#ffd700]">Contact</h2>
-                    <div class="mt-3 space-y-2 text-sm text-white/80">
+                    <p class="mt-2 text-[11px] font-medium uppercase tracking-wide text-[#ffd700]/90">Main support (calls &amp; WhatsApp)</p>
+                    <div class="mt-1.5 space-y-2 text-sm text-white/80">
                         @if ($telHref !== '')
                             <p>
-                                <a href="tel:{{ $telHref }}" class="text-white transition hover:text-[#ffd700]">{{ $footerPhone }}</a>
+                                <a href="tel:{{ $telHref }}" class="text-base font-semibold text-white transition hover:text-[#ffd700]">{{ $footerPhone }}</a>
                             </p>
                         @else
                             <p class="text-white">{{ $footerPhone }}</p>

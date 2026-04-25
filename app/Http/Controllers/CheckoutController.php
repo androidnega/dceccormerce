@@ -79,6 +79,14 @@ class CheckoutController extends Controller
 
         $total = round($baseTotal + $effectiveDeliveryPrice, 2);
 
+        $user = $request->user();
+        $checkoutContactPrefill = $user
+            ? [
+                'full_name' => (string) $user->name,
+                'email' => (string) $user->email,
+            ]
+            : null;
+
         return view('checkout.index', [
             'lines' => $lines,
             'itemsSubtotal' => $itemsSubtotal,
@@ -92,6 +100,7 @@ class CheckoutController extends Controller
             'deliveryPrice' => $deliveryPrice,
             'effectiveDeliveryPrice' => $effectiveDeliveryPrice,
             'paystackReady' => paystack_ready(),
+            'checkoutContactPrefill' => $checkoutContactPrefill,
         ]);
     }
 
@@ -107,15 +116,15 @@ class CheckoutController extends Controller
             ),
             'full_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
-            'recipient_same_as_contact' => ['sometimes', 'in:0,1'],
+            'delivery_target' => ['required', 'in:to_me,to_other'],
             'recipient_name' => [
-                Rule::requiredIf(fn () => ! $request->boolean('recipient_same_as_contact')),
+                Rule::requiredIf(fn () => $request->input('delivery_target') === 'to_other'),
                 'nullable',
                 'string',
                 'max:255',
             ],
             'recipient_phone' => [
-                Rule::requiredIf(fn () => ! $request->boolean('recipient_same_as_contact')),
+                Rule::requiredIf(fn () => $request->input('delivery_target') === 'to_other'),
                 'nullable',
                 'string',
                 'max:50',
@@ -126,6 +135,8 @@ class CheckoutController extends Controller
             'delivery_option' => ['required', 'string', 'in:standard,express,pickup'],
             'payment_method' => ['required', 'string', 'in:cod,momo'],
         ]);
+
+        $validated['recipient_same_as_contact'] = $validated['delivery_target'] === 'to_me' ? '1' : '0';
 
         if (empty(session('cart', []))) {
             return redirect()->route('cart.index')->withErrors(['checkout' => 'Your cart is empty.']);
