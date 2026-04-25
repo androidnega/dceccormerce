@@ -1,0 +1,12 @@
+---
+description: Prefer small, reviewable git commits grouped by feature
+alwaysApply: false
+---
+
+# Git commit workflow (DCapple)
+
+When shipping work that spans multiple areas, **commit in logical slices** so each commit is one story (for example: database + model; then services; then HTTP + views; then legal copy only).
+
+**Patterns that work well:** migration with model changes in the same commit; pair `routes/web.php` changes with the controller and views they register; keep “docs only” or “copy only” commits separate from code.
+
+**One-line subject** in imperative mood (`feat(orders): add Paystack refund on failed delivery`), then a blank line and bullets for non-obvious details if needed.
