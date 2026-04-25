@@ -12,6 +12,7 @@ class OrderDeliveryService
     public function __construct(
         private readonly OrderNotificationService $orderNotifications,
         private readonly OrderPaystackRefundService $orderPaystackRefund,
+        private readonly OrderStockRestorationService $orderStockRestoration,
     ) {}
 
     /**
@@ -98,7 +99,35 @@ class OrderDeliveryService
         });
 
         $order->refresh();
+        $this->orderStockRestoration->restoreIfEligible($order);
         $this->orderPaystackRefund->autoRefundIfPaystackPaidOrderFailed($order);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * @return array{ok: bool, error?: string}
+     */
+    public function cancelOrder(Order $order): array
+    {
+        if (! in_array((string) $order->delivery_status, ['pending', 'confirmed', 'prepared'], true)) {
+            return ['ok' => false, 'error' => 'This order cannot be cancelled at this stage.'];
+        }
+
+        DB::transaction(function () use ($order): void {
+            $this->releaseRiderForOrder($order);
+            $this->releaseDeliveryAgentForOrder($order);
+
+            $order->update([
+                'status' => 'cancelled',
+                'delivery_status' => 'cancelled',
+                'rider_id' => null,
+                'delivery_agent_id' => null,
+            ]);
+        });
+
+        $order->refresh();
+        $this->orderStockRestoration->restoreIfEligible($order);
 
         return ['ok' => true];
     }

@@ -56,8 +56,11 @@ class OrderPaystackRefundService
         );
 
         if ($result === null) {
-            $order->update(['refund_status' => 'failed']);
-            Log::error('Paystack auto refund failed.', [
+            $order->update([
+                'refund_status' => 'failed',
+                'refund_failed' => true,
+            ]);
+            Log::critical('Paystack auto refund failed.', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
                 'paystack_reference' => $ref,
@@ -68,6 +71,7 @@ class OrderPaystackRefundService
 
         $order->update([
             'refund_status' => 'completed',
+            'refund_failed' => false,
             'paystack_refund_id' => $result['paystack_refund_id'],
             'refunded_at' => now(),
             'payment_status' => 'refunded',

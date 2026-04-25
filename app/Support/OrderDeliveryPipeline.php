@@ -144,6 +144,7 @@ final class OrderDeliveryPipeline
         $keys = array_column($steps, 'key');
         $ds = (string) ($order->delivery_status ?? 'pending');
         $failed = $ds === 'failed';
+        $cancelled = $ds === 'cancelled';
         $delivered = $ds === 'delivered';
 
         $effective = $failed ? (string) ($order->failed_previous_status ?? 'pending') : $ds;
@@ -156,9 +157,9 @@ final class OrderDeliveryPipeline
             'channel' => $channel,
             'channel_label' => self::channelLabel($channel),
             'delivery_status' => $ds,
-            'is_failed' => $failed,
+            'is_failed' => $failed || $cancelled,
             'is_delivered' => $delivered,
-            'current_index' => $failed ? null : (int) $currentIndex,
+            'current_index' => ($failed || $cancelled) ? null : (int) $currentIndex,
             'steps' => $steps,
             'failed_previous_status' => $failed ? (string) ($order->failed_previous_status ?? '') : null,
         ];
@@ -174,6 +175,7 @@ final class OrderDeliveryPipeline
         $keys = array_column($steps, 'key');
         $ds = (string) ($order->delivery_status ?? 'pending');
         $failed = $ds === 'failed';
+        $cancelled = $ds === 'cancelled';
 
         $effective = $failed ? (string) ($order->failed_previous_status ?? 'pending') : $ds;
         $currentIndex = array_search($effective, $keys, true);
@@ -186,9 +188,9 @@ final class OrderDeliveryPipeline
             'channel_label' => self::channelLabel($channel),
             'channel_description' => self::channelDescription($channel),
             'steps' => $steps,
-            'current_index' => $failed ? null : (int) $currentIndex,
+            'current_index' => ($failed || $cancelled) ? null : (int) $currentIndex,
             'delivery_status' => $ds,
-            'is_failed' => $failed,
+            'is_failed' => $failed || $cancelled,
             'is_delivered' => $ds === 'delivered',
         ];
     }

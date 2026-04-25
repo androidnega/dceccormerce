@@ -64,4 +64,7 @@ return [
     */
     'express_when_standard_free' => env('DELIVERY_EXPRESS_WHEN_STANDARD_FREE', 'surcharge_only'),
 
+    /** Added to zone base fee for express (GHS), when using location delivery_zones. */
+    'express_surcharge_on_zone_fee' => (float) env('DELIVERY_EXPRESS_ZONE_SURCHARGE', 5),
+
 ];

@@ -185,4 +185,20 @@ class PaystackService
             'raw' => $data,
         ];
     }
+
+    public function verifyWebhookSignature(string $payload, ?string $signature): bool
+    {
+        if ($signature === null || trim($signature) === '') {
+            return false;
+        }
+
+        $secret = paystack_secret_key();
+        if ($secret === '') {
+            return false;
+        }
+
+        $computed = hash_hmac('sha512', $payload, $secret);
+
+        return hash_equals($computed, $signature);
+    }
 }
