@@ -5,7 +5,9 @@
 @section('content')
     <div class="mx-auto max-w-3xl">
         <a href="{{ route('account.orders.index') }}" class="text-sm text-neutral-500 hover:text-neutral-900">&larr; My orders</a>
-        <a href="{{ route('orders.track', $order->order_number) }}" class="ml-4 text-sm text-neutral-700 underline">Track delivery</a>
+        @if ($order->access_token)
+            <a href="{{ route('orders.track', ['order_number' => $order->order_number]).'?token='.urlencode((string) $order->access_token) }}" class="ml-4 text-sm text-neutral-700 underline">Track delivery</a>
+        @endif
 
         @php
             use App\Support\OrderDeliveryPipeline;

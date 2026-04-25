@@ -13,8 +13,13 @@
             <p class="mt-1 text-sm">
                 <a href="{{ route('tracking.index') }}" class="font-medium underline">Track your order</a>
                 or open
-                <a href="{{ route('orders.track', $order->order_number) }}" class="font-mono underline">{{ $order->order_number }}</a>.
+                <a href="{{ route('orders.track', ['order_number' => $order->order_number]).'?token='.urlencode((string) $order->access_token) }}" class="font-mono underline">{{ $order->order_number }}</a>.
             </p>
+            @if ($order->access_token)
+                <p class="mt-2 text-xs text-slate-600">Save your private link:
+                    <a href="{{ route('orders.lookup', ['order_number' => $order->order_number]).'?token='.urlencode((string) $order->access_token) }}" class="font-mono underline break-all">Order details</a>
+                </p>
+            @endif
         </div>
 
         @php
@@ -53,6 +58,12 @@
                     <div class="flex justify-between gap-4 text-emerald-800">
                         <dt>Promo discount</dt>
                         <dd class="tabular-nums font-medium">−{{ format_ghs($promoDisc) }}</dd>
+                    </div>
+                @endif
+                @if ((float) ($order->discount_amount ?? 0) > 0.009 && $order->coupon_code)
+                    <div class="flex justify-between gap-4 text-emerald-800">
+                        <dt>Coupon ({{ $order->coupon_code }})</dt>
+                        <dd class="tabular-nums font-medium">−{{ format_ghs((float) $order->discount_amount) }}</dd>
                     </div>
                 @endif
                 <div class="flex justify-between gap-4 border-t border-slate-100 pt-3 text-base font-semibold text-slate-900">

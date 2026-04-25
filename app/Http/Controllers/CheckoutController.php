@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DeliveryRule;
+use App\Models\DeliveryZone;
 use App\Models\Order;
-use App\Models\OrderAddress;
-use App\Models\OrderItem;
-use App\Models\Product;
+use App\Models\PaystackPendingCheckout;
 use App\Models\Promo;
-use App\Services\DeliveryPricingService;
+use App\Models\Region;
+use App\Services\CouponService;
 use App\Services\OrderNotificationService;
+use App\Services\OrderPersistenceService;
+use App\Services\PaystackFinalizeService;
 use App\Services\PaystackService;
 use App\Support\CartSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -24,8 +26,9 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private readonly OrderNotificationService $orderNotifications,
-        private readonly DeliveryPricingService $deliveryPricing,
         private readonly PaystackService $paystack,
+        private readonly OrderPersistenceService $orderPersistence,
+        private readonly PaystackFinalizeService $paystackFinalize,
     ) {}
 
     public function index(Request $request): View|RedirectResponse
@@ -54,28 +57,53 @@ class CheckoutController extends Controller
         $promoDiscountAmount = round($itemsSubtotal * ($promoDiscountPercent / 100), 2);
         $baseTotal = round($itemsSubtotal - $promoDiscountAmount, 2);
 
-        $city = trim((string) old('city', $request->query('city', '')));
-        $deliveryZone = $this->resolveDeliveryZoneFromCity($city);
-        $totalQty = 0;
-        foreach ($lines as $line) {
-            $totalQty += (int) ($line['quantity'] ?? 0);
-        }
-        $deliveryOptions = $this->deliveryPricing->applyToOptions(
-            $this->deliveryOptionsForZone($deliveryZone),
-            [
-                'items_subtotal' => $itemsSubtotal,
-                'promo_discount_amount' => $promoDiscountAmount,
-                'total_quantity' => $totalQty,
-            ]
-        );
+        $regions = Region::query()->orderBy('name')->get();
+        $isPickupOld = old('delivery_option') === 'pickup';
+        $defaultRegionId = (int) old('region_id', $regions->first()?->id ?? 0);
+        $zones = $defaultRegionId > 0
+            ? DeliveryZone::query()->active()->where('region_id', $defaultRegionId)->orderBy('name')->get()
+            : collect();
+        $defaultZoneId = (int) old('delivery_zone_id', $zones->first()?->id ?? 0);
 
-        $selectedDeliveryOption = (string) old('delivery_option', array_key_first($deliveryOptions) ?: 'standard');
-        if (! isset($deliveryOptions[$selectedDeliveryOption])) {
-            $selectedDeliveryOption = array_key_first($deliveryOptions) ?: 'standard';
-        }
+        $selectedDeliveryOption = (string) old('delivery_option', 'standard');
+        $couponCodeOld = old('coupon_code', '');
 
-        $deliveryPrice = (float) ($deliveryOptions[$selectedDeliveryOption]['price'] ?? 0);
-        $effectiveDeliveryPrice = Promo::hasActiveFreeDeliveryPromo() ? 0.0 : $deliveryPrice;
+        $deliveryPrice = 0.0;
+        $effectiveDeliveryPrice = 0.0;
+        $deliveryOptions = [];
+
+        if ($isPickupOld) {
+            $deliveryOptions = [
+                'standard' => ['option' => 'standard', 'method' => 'rider', 'price' => 0.0, 'estimated_time' => '—'],
+                'express' => ['option' => 'express', 'method' => 'rider', 'price' => 0.0, 'estimated_time' => '—'],
+                'pickup' => ['option' => 'pickup', 'method' => 'pickup', 'price' => 0.0, 'estimated_time' => 'immediate'],
+            ];
+            $selectedDeliveryOption = 'pickup';
+            $deliveryPrice = 0.0;
+            $effectiveDeliveryPrice = Promo::hasActiveFreeDeliveryPromo() ? 0.0 : 0.0;
+        } elseif ($defaultRegionId > 0 && $defaultZoneId > 0) {
+            $api = $this->orderPersistence->deliveryOptionsForCart(
+                session('cart', []),
+                $defaultRegionId,
+                $defaultZoneId,
+                $selectedDeliveryOption,
+                $couponCodeOld !== '' ? (string) $couponCodeOld : null
+            );
+            foreach ($api['options'] as $row) {
+                $deliveryOptions[$row['option']] = $row;
+            }
+            if (! isset($deliveryOptions[$selectedDeliveryOption])) {
+                $selectedDeliveryOption = $api['selectedOption'];
+            }
+            $deliveryPrice = (float) ($deliveryOptions[$selectedDeliveryOption]['price'] ?? 0);
+            $effectiveDeliveryPrice = $deliveryPrice;
+        } else {
+            $deliveryOptions = [
+                'standard' => ['option' => 'standard', 'method' => 'rider', 'price' => 0.0, 'estimated_time' => '—'],
+                'express' => ['option' => 'express', 'method' => 'rider', 'price' => 0.0, 'estimated_time' => '—'],
+                'pickup' => ['option' => 'pickup', 'method' => 'pickup', 'price' => 0.0, 'estimated_time' => 'immediate'],
+            ];
+        }
 
         $total = round($baseTotal + $effectiveDeliveryPrice, 2);
 
@@ -93,8 +121,12 @@ class CheckoutController extends Controller
             'promoDiscountPercent' => $promoDiscountPercent,
             'promoDiscountAmount' => $promoDiscountAmount,
             'total' => $total,
-            'freeDeliveryPromoActive' => Promo::hasActiveFreeDeliveryPromo(),
-            'deliveryZone' => $deliveryZone,
+            'freeDeliveryPromoActive' => Promo::hasActiveFreeDeliveryPromo()
+                || $this->couponServiceEvaluateFreeOnly($couponCodeOld, max(0.0, $baseTotal)),
+            'regions' => $regions,
+            'zones' => $zones,
+            'selectedRegionId' => $defaultRegionId,
+            'selectedZoneId' => $defaultZoneId,
             'deliveryOptions' => $deliveryOptions,
             'selectedDeliveryOption' => $selectedDeliveryOption,
             'deliveryPrice' => $deliveryPrice,
@@ -102,6 +134,16 @@ class CheckoutController extends Controller
             'paystackReady' => paystack_ready(),
             'checkoutContactPrefill' => $checkoutContactPrefill,
         ]);
+    }
+
+    private function couponServiceEvaluateFreeOnly(string $couponCode, float $afterPromo): bool
+    {
+        if (trim($couponCode) === '') {
+            return false;
+        }
+        $eval = app(CouponService::class)->evaluate($couponCode, max(0.0, $afterPromo));
+
+        return (bool) ($eval['free_delivery'] ?? false);
     }
 
     public function store(Request $request): RedirectResponse
@@ -130,11 +172,24 @@ class CheckoutController extends Controller
                 'max:50',
             ],
             'address' => $isPickup ? ['nullable', 'string', 'max:500'] : ['required', 'string', 'max:500'],
-            'city' => $isPickup ? ['nullable', 'string', 'max:100'] : ['required', 'string', 'max:100'],
             'country' => ['nullable', 'string', 'max:100'],
+            'region_id' => $isPickup ? ['nullable', 'integer', 'exists:regions,id'] : ['required', 'integer', 'exists:regions,id'],
+            'delivery_zone_id' => $isPickup ? ['nullable', 'integer', 'exists:delivery_zones,id'] : ['required', 'integer', 'exists:delivery_zones,id'],
             'delivery_option' => ['required', 'string', 'in:standard,express,pickup'],
             'payment_method' => ['required', 'string', 'in:cod,momo'],
+            'coupon_code' => ['nullable', 'string', 'max:64'],
         ]);
+
+        if (! $isPickup && isset($validated['delivery_zone_id'], $validated['region_id'])) {
+            $zoneOk = DeliveryZone::query()
+                ->active()
+                ->whereKey((int) $validated['delivery_zone_id'])
+                ->where('region_id', (int) $validated['region_id'])
+                ->exists();
+            if (! $zoneOk) {
+                return redirect()->route('checkout.index')->withErrors(['delivery_zone_id' => 'Selected area does not match the region.'])->withInput();
+            }
+        }
 
         $validated['recipient_same_as_contact'] = $validated['delivery_target'] === 'to_me' ? '1' : '0';
 
@@ -151,7 +206,7 @@ class CheckoutController extends Controller
 
         if ($request->input('payment_method') === 'momo' && paystack_ready()) {
             try {
-                $quote = $this->quoteOrderTotalsForCart($request, $validated);
+                $quote = $this->orderPersistence->quoteGrandTotal($validated, session('cart', []));
             } catch (ValidationException $e) {
                 return redirect()->route('checkout.index')->withErrors($e->errors())->withInput();
             }
@@ -189,6 +244,14 @@ class CheckoutController extends Controller
                     ->withInput();
             }
 
+            PaystackPendingCheckout::query()->create([
+                'reference' => $start['reference'],
+                'cart_payload' => session('cart', []),
+                'validated_payload' => $validated,
+                'expected_amount_pesewas' => $start['amount_pesewas'],
+                'user_id' => $request->user()?->id,
+            ]);
+
             $request->session()->put('paystack_checkout', [
                 'expected_amount_pesewas' => $start['amount_pesewas'],
                 'paystack_reference' => $start['reference'],
@@ -199,7 +262,14 @@ class CheckoutController extends Controller
         }
 
         try {
-            $order = $this->persistOrder($validated, $request, 'unpaid', null);
+            $order = $this->orderPersistence->persist(
+                $validated,
+                session('cart', []),
+                $request->user()?->id,
+                'unpaid',
+                null,
+                true
+            );
         } catch (ValidationException $e) {
             return redirect()->route('checkout.index')->withErrors($e->errors())->withInput();
         }
@@ -210,13 +280,10 @@ class CheckoutController extends Controller
             //
         }
 
-        return redirect()->route('checkout.success', $order);
+        return $this->redirectToCheckoutSuccess($order);
     }
 
-    /**
-     * Paystack redirects here after the customer authorizes payment (card or mobile money, including MTN, Vodafone, AirtelTigo in Ghana when enabled on the Paystack dashboard).
-     */
-    public function paystackCallback(Request $request): RedirectResponse
+    public function paystackCallback(Request $request): RedirectResponse|Response
     {
         $reference = (string) $request->query('reference', $request->query('trxref', ''));
         if ($reference === '') {
@@ -225,286 +292,34 @@ class CheckoutController extends Controller
                 ->withErrors(['checkout' => 'Payment was not completed. Your cart is unchanged.']);
         }
 
-        $state = $request->session()->get('paystack_checkout');
-        if (! is_array($state) || ($state['paystack_reference'] ?? null) !== $reference) {
-            return redirect()
-                ->route('checkout.index')
-                ->withErrors(['checkout' => 'Your payment session is missing or expired. If you completed a charge, use reference '.$reference.' when you contact support.']);
-        }
-
-        if (($state['expected_amount_pesewas'] ?? 0) < 1) {
+        $pending = PaystackPendingCheckout::query()->where('reference', $reference)->first();
+        if ($pending !== null) {
+            $result = $this->paystackFinalize->finalizePaidOrder($reference, true);
             $request->session()->forget('paystack_checkout');
+            if (! $result['ok'] || $result['order'] === null) {
+                return redirect()
+                    ->route('checkout.index')
+                    ->withErrors(['checkout' => 'We could not finalize your payment. If you were charged, contact support with reference '.$reference.'.']);
+            }
 
-            return redirect()
-                ->route('checkout.index')
-                ->withErrors(['checkout' => 'Invalid payment session. Please start checkout again.']);
+            return $this->redirectToCheckoutSuccess($result['order']);
         }
 
-        if (empty(session('cart', []))) {
-            $request->session()->forget('paystack_checkout');
+        Log::warning('paystack_callback_no_pending', ['reference' => $reference]);
 
-            return redirect()
-                ->route('cart.index')
-                ->withErrors(['checkout' => 'Your cart is empty. If payment was taken, contact support. Reference: '.$reference]);
-        }
-
-        $verified = $this->paystack->verifyReference($reference);
-        if ($verified === null || (int) ($verified['amount'] ?? 0) !== (int) $state['expected_amount_pesewas']) {
-            return redirect()
-                ->route('checkout.index')
-                ->withErrors(['checkout' => 'Payment could not be verified. If you were charged, contact support. Reference: '.$reference]);
-        }
-
-        $validated = is_array($state['validated'] ?? null) ? $state['validated'] : [];
-        if ($validated === []) {
-            $request->session()->forget('paystack_checkout');
-
-            return redirect()
-                ->route('checkout.index')
-                ->withErrors(['checkout' => 'Checkout data was lost. If you were charged, contact support. Reference: '.$reference]);
-        }
-
-        try {
-            $order = $this->persistOrder($validated, $request, 'paid', $reference);
-        } catch (ValidationException $e) {
-            $request->session()->forget('paystack_checkout');
-
-            return redirect()->route('checkout.index')->withErrors($e->errors());
-        }
-        $request->session()->forget('paystack_checkout');
-
-        try {
-            $this->orderNotifications->notifyOrderPlaced($order->fresh(['address']));
-        } catch (\Throwable) {
-            //
-        }
-
-        return redirect()->route('checkout.success', $order);
+        return response()->view('checkout.payment-error', [
+            'reference' => $reference,
+        ], 422);
     }
 
-    /**
-     * @param  array<string, mixed>  $validated
-     */
-    private function persistOrder(array $validated, Request $request, string $paymentStatus, ?string $paystackReference): Order
+    public function success(Request $request, string $order_number): View
     {
-        $paystackReference = $paystackReference !== null && $paystackReference !== '' ? $paystackReference : null;
+        $token = trim((string) $request->query('token', ''));
+        abort_if($token === '', 403);
 
-        return DB::transaction(function () use ($validated, $request, $paymentStatus, $paystackReference) {
-            $cart = session('cart', []);
-            $productIds = array_map('intval', array_keys($cart));
-            sort($productIds);
+        $order = Order::findByOrderNumberAndAccessToken($order_number, $token);
+        abort_if($order === null, 403);
 
-            $resolved = [];
-
-            foreach ($productIds as $productId) {
-                $qty = (int) ($cart[$productId]['quantity'] ?? 0);
-                if ($qty < 1) {
-                    continue;
-                }
-
-                $product = Product::query()->lockForUpdate()->find($productId);
-
-                if (! $product || ! $product->is_active) {
-                    throw ValidationException::withMessages([
-                        'checkout' => ['Cart contains unavailable products. Please update your cart.'],
-                    ]);
-                }
-
-                if ($qty > $product->stock) {
-                    throw ValidationException::withMessages([
-                        'checkout' => ["Insufficient stock for {$product->name}. Available: {$product->stock}."],
-                    ]);
-                }
-
-                $resolved[] = [
-                    'product' => $product,
-                    'quantity' => $qty,
-                ];
-            }
-
-            if ($resolved === []) {
-                throw ValidationException::withMessages([
-                    'checkout' => ['Your cart is empty.'],
-                ]);
-            }
-
-            $itemsSubtotal = 0.0;
-
-            foreach ($resolved as $row) {
-                $unitPrice = $row['product']->effectivePrice();
-                $itemsSubtotal += $unitPrice * $row['quantity'];
-            }
-
-            $itemsSubtotal = round($itemsSubtotal, 2);
-            $promoDiscountAmount = round($itemsSubtotal * (Promo::activeCartDiscountPercent() / 100), 2);
-            $totalAmount = round($itemsSubtotal - $promoDiscountAmount, 2);
-
-            $delOpt = (string) ($validated['delivery_option'] ?? 'standard');
-            $city = isset($validated['city']) ? trim((string) $validated['city']) : '';
-            $deliveryZone = $this->resolveDeliveryZoneFromCity($delOpt === 'pickup' ? 'accra' : $city);
-            $totalQty = 0;
-            foreach ($resolved as $row) {
-                $totalQty += (int) $row['quantity'];
-            }
-            $deliveryOptions = $this->deliveryPricing->applyToOptions(
-                $this->deliveryOptionsForZone($deliveryZone),
-                [
-                    'items_subtotal' => $itemsSubtotal,
-                    'promo_discount_amount' => $promoDiscountAmount,
-                    'total_quantity' => $totalQty,
-                ]
-            );
-            $selectedDeliveryOption = (string) ($validated['delivery_option'] ?? 'standard');
-            $selectedDelivery = $deliveryOptions[$selectedDeliveryOption] ?? null;
-
-            $deliveryPrice = (float) ($selectedDelivery['price'] ?? 0);
-            $effectiveDeliveryPrice = Promo::hasActiveFreeDeliveryPromo() ? 0.0 : $deliveryPrice;
-            $deliveryMethod = (string) ($selectedDelivery['method'] ?? ($selectedDeliveryOption === 'pickup' ? 'pickup' : 'rider'));
-
-            $order = Order::query()->create([
-                'user_id' => $request->user()?->id,
-                'total_amount' => round($totalAmount + $effectiveDeliveryPrice, 2),
-                'promo_discount_amount' => $promoDiscountAmount,
-                'status' => 'pending',
-                'delivery_status' => 'pending',
-                'payment_status' => $paymentStatus,
-                'payment_method' => $validated['payment_method'] ?? 'momo',
-                'paystack_reference' => $paystackReference,
-                'delivery_option' => $validated['delivery_option'],
-                'delivery_method' => $deliveryMethod,
-                'delivery_zone' => $deliveryZone,
-                'delivery_price' => round($effectiveDeliveryPrice, 2),
-            ]);
-
-            foreach ($resolved as $row) {
-                $product = $row['product'];
-                $qty = $row['quantity'];
-
-                OrderItem::query()->create([
-                    'order_id' => $order->id,
-                    'product_id' => $product->id,
-                    'quantity' => $qty,
-                    'price' => $product->effectivePrice(),
-                ]);
-
-                $product->decrement('stock', $qty);
-            }
-
-            $addressLine = trim((string) ($validated['address'] ?? ''));
-            $country = isset($validated['country']) ? trim((string) $validated['country']) : '';
-            if ($selectedDeliveryOption === 'pickup') {
-                if ($addressLine === '') {
-                    $addressLine = 'In-store pickup';
-                }
-                if ($city === '') {
-                    $city = '—';
-                }
-            }
-            if ($addressLine === '') {
-                $addressLine = '—';
-            }
-
-            $sameRecipient = (int) ($validated['recipient_same_as_contact'] ?? 0) === 1;
-
-            OrderAddress::query()->create([
-                'order_id' => $order->id,
-                'full_name' => $validated['full_name'],
-                'phone' => $validated['phone'],
-                'recipient_name' => $sameRecipient ? null : trim((string) ($validated['recipient_name'] ?? '')),
-                'recipient_phone' => $sameRecipient ? null : trim((string) ($validated['recipient_phone'] ?? '')),
-                'address' => $addressLine,
-                'city' => $city === '' ? null : $city,
-                'country' => $country === '' ? null : $country,
-            ]);
-
-            session()->forget('cart');
-
-            return $order->fresh();
-        });
-    }
-
-    /**
-     * @param  array<string, mixed>  $validated
-     * @return array{grand_total: float}
-     */
-    private function quoteOrderTotalsForCart(Request $request, array $validated): array
-    {
-        if (empty(session('cart', []))) {
-            throw ValidationException::withMessages([
-                'checkout' => ['Your cart is empty.'],
-            ]);
-        }
-
-        return DB::transaction(function () use ($validated) {
-            $cart = session('cart', []);
-            $productIds = array_map('intval', array_keys($cart));
-            sort($productIds);
-
-            $resolved = [];
-            foreach ($productIds as $productId) {
-                $qty = (int) ($cart[$productId]['quantity'] ?? 0);
-                if ($qty < 1) {
-                    continue;
-                }
-                $product = Product::query()->lockForUpdate()->find($productId);
-                if (! $product || ! $product->is_active) {
-                    throw ValidationException::withMessages([
-                        'checkout' => ['Cart contains unavailable products. Please update your cart.'],
-                    ]);
-                }
-                if ($qty > $product->stock) {
-                    throw ValidationException::withMessages([
-                        'checkout' => ["Insufficient stock for {$product->name}. Available: {$product->stock}."],
-                    ]);
-                }
-                $resolved[] = [
-                    'product' => $product,
-                    'quantity' => $qty,
-                ];
-            }
-            if ($resolved === []) {
-                throw ValidationException::withMessages([
-                    'checkout' => ['Your cart is empty.'],
-                ]);
-            }
-
-            $itemsSubtotal = 0.0;
-            foreach ($resolved as $row) {
-                $itemsSubtotal += $row['product']->effectivePrice() * $row['quantity'];
-            }
-            $itemsSubtotal = round($itemsSubtotal, 2);
-            $promoDiscountAmount = round($itemsSubtotal * (Promo::activeCartDiscountPercent() / 100), 2);
-            $totalAmount = round($itemsSubtotal - $promoDiscountAmount, 2);
-
-            $delOpt = (string) ($validated['delivery_option'] ?? 'standard');
-            $city = isset($validated['city']) ? trim((string) $validated['city']) : '';
-            $deliveryZone = $this->resolveDeliveryZoneFromCity($delOpt === 'pickup' ? 'accra' : $city);
-            $totalQty = 0;
-            foreach ($resolved as $row) {
-                $totalQty += (int) $row['quantity'];
-            }
-            $deliveryOptions = $this->deliveryPricing->applyToOptions(
-                $this->deliveryOptionsForZone($deliveryZone),
-                [
-                    'items_subtotal' => $itemsSubtotal,
-                    'promo_discount_amount' => $promoDiscountAmount,
-                    'total_quantity' => $totalQty,
-                ]
-            );
-            $selectedDeliveryOption = (string) ($validated['delivery_option'] ?? 'standard');
-            $selectedDelivery = $deliveryOptions[$selectedDeliveryOption] ?? null;
-            $deliveryPrice = (float) ($selectedDelivery['price'] ?? 0);
-            $effectiveDeliveryPrice = Promo::hasActiveFreeDeliveryPromo() ? 0.0 : $deliveryPrice;
-            $grand = round($totalAmount + $effectiveDeliveryPrice, 2);
-
-            return [
-                'grand_total' => $grand,
-            ];
-        });
-    }
-
-    public function success(Order $order): View
-    {
         $order->load(['items.product', 'address']);
 
         return view('checkout.success', compact('order'));
@@ -515,146 +330,59 @@ class CheckoutController extends Controller
         CartSession::reconcile();
         $cart = session('cart', []);
 
-        $city = trim((string) $request->query('city', ''));
-        $zone = $this->resolveDeliveryZoneFromCity($city);
+        $regionId = (int) $request->query('region_id', 0);
+        $zoneId = (int) $request->query('delivery_zone_id', 0);
+        $selected = (string) $request->query('selected', '');
+        $coupon = $request->query('coupon_code');
 
-        if ($cart === []) {
-            return response()->json([
-                'zone' => $zone,
-                'selectedOption' => 'standard',
-                'options' => [],
-            ]);
-        }
-
-        $itemsSubtotal = 0.0;
-        $totalQty = 0;
-        foreach ($cart as $line) {
-            $q = (int) ($line['quantity'] ?? 0);
-            $totalQty += $q;
-            $itemsSubtotal += (float) ($line['price'] ?? 0) * $q;
-        }
-        $itemsSubtotal = round($itemsSubtotal, 2);
-        $promoDiscountAmount = round($itemsSubtotal * (Promo::activeCartDiscountPercent() / 100), 2);
-
-        $options = $this->deliveryPricing->applyToOptions(
-            $this->deliveryOptionsForZone($zone),
-            [
-                'items_subtotal' => $itemsSubtotal,
-                'promo_discount_amount' => $promoDiscountAmount,
-                'total_quantity' => $totalQty,
-            ]
+        $out = $this->orderPersistence->deliveryOptionsForCart(
+            $cart,
+            $regionId > 0 ? $regionId : null,
+            $zoneId > 0 ? $zoneId : null,
+            $selected,
+            is_string($coupon) ? $coupon : null
         );
 
-        $selected = (string) $request->query('selected', '');
-        if ($selected === '' || ! isset($options[$selected])) {
-            $selected = array_key_first($options) ?: 'standard';
+        $freePromo = Promo::hasActiveFreeDeliveryPromo();
+        $afterPromoSub = $this->orderPersistence->afterPromoSubtotalFromEffectiveCartPrices($cart);
+        $freeCoupon = false;
+        if (is_string($coupon) && $coupon !== '') {
+            $ev = app(CouponService::class)->evaluate($coupon, max(0.0, $afterPromoSub));
+            $freeCoupon = (bool) ($ev['free_delivery'] ?? false);
         }
 
-        // Shape response to be friendly for JS.
-        $out = [
-            'zone' => $zone,
-            'selectedOption' => $selected,
-            'options' => array_values(array_map(function (array $row) {
-                return [
-                    'option' => $row['option'],
-                    'method' => $row['method'],
-                    'price' => (float) $row['price'],
-                    'estimated_time' => $row['estimated_time'] ?? null,
-                    'price_note' => $row['price_note'] ?? null,
-                ];
-            }, $options)),
-        ];
-
-        if (Promo::hasActiveFreeDeliveryPromo()) {
-            foreach ($out['options'] as &$o) {
-                $o['price'] = 0.0;
-                $o['price_note'] = null;
-            }
-        }
-
-        return response()->json($out);
+        return response()->json(array_merge($out, [
+            'freeDeliveryPromoActive' => $freePromo || $freeCoupon,
+        ]));
     }
 
-    private function resolveDeliveryZoneFromCity(string $city): string
+    public function locationZones(Request $request): JsonResponse
     {
-        $c = mb_strtolower(trim($city));
-
-        if ($c === '' || $c === 'outside city' || str_contains($c, 'outside')) {
-            return 'Outside City';
+        $regionId = (int) $request->query('region_id', 0);
+        if ($regionId < 1) {
+            return response()->json(['zones' => []]);
         }
 
-        if (str_contains($c, 'accra')) {
-            return 'Accra';
-        }
+        $zones = DeliveryZone::query()
+            ->active()
+            ->where('region_id', $regionId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'fee']);
 
-        if (str_contains($c, 'takoradi')) {
-            return 'Takoradi';
-        }
-
-        return 'Outside City';
+        return response()->json([
+            'zones' => $zones->map(fn (DeliveryZone $z) => [
+                'id' => $z->id,
+                'name' => $z->name,
+                'fee' => (float) $z->fee,
+            ])->values(),
+        ]);
     }
 
-    /**
-     * @return array<string, array{option: string, method: string, price: float, estimated_time: ?string}>
-     */
-    private function deliveryOptionsForZone(string $zone): array
+    private function redirectToCheckoutSuccess(Order $order): RedirectResponse
     {
-        $rules = DeliveryRule::query()
-            ->where('active', true)
-            ->where('zone', $zone)
-            ->orderBy('id')
-            ->get();
-
-        if ($rules->isEmpty()) {
-            // Safe fallback until admins add delivery_rules.
-            return [
-                'standard' => [
-                    'option' => 'standard',
-                    'method' => 'rider',
-                    'price' => 0.0,
-                    'estimated_time' => '2–5 business days',
-                ],
-                'express' => [
-                    'option' => 'express',
-                    'method' => 'rider',
-                    'price' => 0.0,
-                    'estimated_time' => '1 hour',
-                ],
-                'pickup' => [
-                    'option' => 'pickup',
-                    'method' => 'pickup',
-                    'price' => 0.0,
-                    'estimated_time' => 'immediate',
-                ],
-            ];
-        }
-
-        $byOption = [];
-        foreach ($rules as $rule) {
-            if (! isset($byOption[$rule->option])) {
-                $byOption[$rule->option] = [
-                    'option' => (string) $rule->option,
-                    'method' => (string) $rule->method,
-                    'price' => (float) $rule->price,
-                    'estimated_time' => $rule->estimated_time,
-                ];
-            }
-        }
-
-        // Ensure UI still has all 3 options.
-        foreach (['standard', 'express', 'pickup'] as $opt) {
-            if (isset($byOption[$opt])) {
-                continue;
-            }
-
-            $byOption[$opt] = [
-                'option' => $opt,
-                'method' => $opt === 'pickup' ? 'pickup' : 'rider',
-                'price' => 0.0,
-                'estimated_time' => $opt === 'pickup' ? 'immediate' : ($opt === 'express' ? '1 hour' : '2–5 business days'),
-            ];
-        }
-
-        return $byOption;
+        return redirect()->route('checkout.success', [
+            'order_number' => $order->order_number,
+            'token' => $order->access_token,
+        ]);
     }
 }

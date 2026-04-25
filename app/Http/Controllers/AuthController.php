@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\GuestOrderLinkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +39,8 @@ class AuthController extends Controller
         Auth::login($user);
 
         $request->session()->regenerate();
+
+        app(GuestOrderLinkService::class)->linkOrdersForUser($user);
 
         return redirect()->route('account.index');
     }
@@ -77,6 +80,10 @@ class AuthController extends Controller
         Auth::login($user, $remember);
 
         $request->session()->regenerate();
+
+        if ($user->role === 'customer') {
+            app(GuestOrderLinkService::class)->linkOrdersForUser($user);
+        }
 
         return $this->redirectByRole();
     }

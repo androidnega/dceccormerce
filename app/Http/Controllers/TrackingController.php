@@ -20,38 +20,38 @@ class TrackingController extends Controller
     {
         $validated = $request->validate([
             'order_number' => ['required', 'string', 'max:32'],
+            'token' => ['required', 'string', 'max:64'],
         ]);
 
         $normalized = strtoupper(trim($validated['order_number']));
         $normalized = preg_replace('/\s+/', '', $normalized) ?? $normalized;
 
-        return redirect()->route('orders.track', ['order_number' => $normalized]);
+        return redirect()->route('orders.track', [
+            'order_number' => $normalized,
+            'token' => $validated['token'],
+        ]);
     }
 
-    public function show(string $order_number): View
+    public function show(Request $request, string $order_number): View
     {
-        $normalized = strtoupper(trim($order_number));
-        $normalized = preg_replace('/\s+/', '', $normalized) ?? $normalized;
+        $token = trim((string) $request->query('token', ''));
+        abort_if($token === '', 403);
 
-        $order = Order::query()
-            ->whereRaw('UPPER(order_number) = ?', [$normalized])
-            ->with(['rider', 'deliveryAgent'])
-            ->firstOrFail();
+        $order = Order::findByOrderNumberAndAccessToken($order_number, $token);
+        abort_if($order === null, 403);
+
+        $order->load(['rider', 'deliveryAgent']);
 
         return view('tracking.show', compact('order'));
     }
 
-    /**
-     * Lightweight JSON for live tracking (poll from the public track page).
-     */
-    public function status(string $order_number): JsonResponse
+    public function status(Request $request, string $order_number): JsonResponse
     {
-        $normalized = strtoupper(trim($order_number));
-        $normalized = preg_replace('/\s+/', '', $normalized) ?? $normalized;
+        $token = trim((string) $request->query('token', ''));
+        abort_if($token === '', 403);
 
-        $order = Order::query()
-            ->whereRaw('UPPER(order_number) = ?', [$normalized])
-            ->firstOrFail();
+        $order = Order::findByOrderNumberAndAccessToken($order_number, $token);
+        abort_if($order === null, 403);
 
         $p = OrderDeliveryPipeline::progressForCustomer($order);
 

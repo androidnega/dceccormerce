@@ -83,7 +83,7 @@
 
                             <div class="border-t border-slate-100 pt-10">
                                 <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Where we deliver</h3>
-                                <p class="mt-1 text-sm text-slate-600" id="delivery-hint">The address below is always the <span class="font-medium text-slate-800">delivery / pickup location</span> (yours or someone else’s). For <strong>delivery to your door</strong>, fill street and city. For <strong>store pickup</strong>, you can leave address blank and choose pickup in the next step.</p>
+                                <p class="mt-1 text-sm text-slate-600" id="delivery-hint">The address below is the <span class="font-medium text-slate-800">delivery / pickup location</span>. For <strong>delivery</strong>, choose region and area, then street address. For <strong>store pickup</strong>, choose pickup in the next step — region and area are not required.</p>
 
                                 <div class="mt-4 space-y-3" role="group" aria-labelledby="delivery-target-label">
                                     <p id="delivery-target-label" class="text-sm font-medium text-slate-800">This order is for <span class="text-red-600">*</span></p>
@@ -113,28 +113,47 @@
                                     </div>
                                 </div>
 
-                                <div class="mt-6 space-y-4">
+                                <div class="mt-6 space-y-4" id="region-zone-wrap">
+                                    <div>
+                                        <label for="region_id" class="block text-sm font-medium text-slate-700">Region <span id="region-req" class="text-red-600">*</span></label>
+                                        <p class="mt-0.5 text-xs text-slate-500" id="region-hint">Choose your region, then the delivery area for pricing.</p>
+                                        <select name="region_id" id="region_id" data-region-select
+                                            class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm @error('region_id') border-red-500 ring-1 ring-red-500 @enderror">
+                                            <option value="">Select region</option>
+                                            @foreach ($regions as $reg)
+                                                <option value="{{ $reg->id }}" @selected((int) ($selectedRegionId ?? 0) === (int) $reg->id)>{{ $reg->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('region_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label for="delivery_zone_id" class="block text-sm font-medium text-slate-700">Delivery area <span id="zone-req" class="text-red-600">*</span></label>
+                                        <select name="delivery_zone_id" id="delivery_zone_id" data-zone-select
+                                            class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm @error('delivery_zone_id') border-red-500 ring-1 ring-red-500 @enderror">
+                                            @foreach ($zones as $z)
+                                                <option value="{{ $z->id }}" data-fee="{{ $z->fee }}" @selected((int) ($selectedZoneId ?? 0) === (int) $z->id)>{{ $z->name }} — {{ format_ghs((float) $z->fee) }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('delivery_zone_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                    </div>
                                     <div>
                                         <label for="address" class="block text-sm font-medium text-slate-700"><span id="address-label-main">Delivery street address</span> <span id="address-req" class="text-red-600">*</span></label>
                                         <input type="text" name="address" id="address" value="{{ old('address') }}" data-address-input autocomplete="street-address" placeholder="House / building, street, area, GPS description"
                                             class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('address') border-red-500 ring-1 ring-red-500 @enderror">
                                         @error('address')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                     </div>
-                                    <div class="grid gap-4 sm:grid-cols-2">
-                                        <div>
-                                            <label for="city" class="block text-sm font-medium text-slate-700" id="city-label">City or area <span id="city-req" class="text-red-600">*</span></label>
-                                            <p class="mt-0.5 text-xs text-slate-500" id="city-hint">Used to calculate delivery. Use “Accra”, “Takoradi”, or <span class="whitespace-nowrap">“Outside city”</span> if you are outside our main zones.</p>
-                                            <input type="text" name="city" id="city" value="{{ old('city') }}" autocomplete="address-level2" placeholder="e.g. Accra, East Legon"
-                                                class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('city') border-red-500 ring-1 ring-red-500 @enderror">
-                                            @error('city')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
-                                        </div>
-                                        <div>
-                                            <label for="country" class="block text-sm font-medium text-slate-700">Country <span class="font-normal text-slate-400">(optional)</span></label>
-                                            <input type="text" name="country" id="country" value="{{ old('country') }}" autocomplete="country-name"
-                                                class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('country') border-red-500 ring-1 ring-red-500 @enderror">
-                                            @error('country')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
-                                        </div>
+                                    <div>
+                                        <label for="country" class="block text-sm font-medium text-slate-700">Country <span class="font-normal text-slate-400">(optional)</span></label>
+                                        <input type="text" name="country" id="country" value="{{ old('country', 'Ghana') }}" autocomplete="country-name"
+                                            class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('country') border-red-500 ring-1 ring-red-500 @enderror">
+                                        @error('country')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                     </div>
+                                </div>
+                                <div class="mt-6">
+                                    <label for="coupon_code" class="block text-sm font-medium text-slate-700">Coupon code <span class="font-normal text-slate-400">(optional)</span></label>
+                                    <input type="text" name="coupon_code" id="coupon_code" value="{{ old('coupon_code') }}" autocomplete="off" placeholder="e.g. WELCOME10"
+                                        class="store-input-focus mt-1.5 w-full max-w-md rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm uppercase text-slate-900 shadow-sm placeholder:normal-case placeholder:text-slate-400 @error('coupon_code') border-red-500 ring-1 ring-red-500 @enderror">
+                                    @error('coupon_code')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                 </div>
                             </div>
                         </div>
@@ -270,7 +289,8 @@
         (function () {
             var paystackReady = @json($paystackReady);
             var addressEl = document.getElementById('address');
-            var cityEl = document.getElementById('city');
+            var regionEl = document.getElementById('region_id');
+            var zoneEl = document.getElementById('delivery_zone_id');
             var emailEl = document.getElementById('email');
             var form = document.getElementById('checkout-form');
             var submitBtn = document.getElementById('checkout-submit');
@@ -284,13 +304,15 @@
                 return !!(form && form.querySelector('input[name="payment_method"][value="momo"]:checked'));
             }
             function syncAddressAndCityRequired() {
-                if (!addressEl || !cityEl) return;
+                if (!addressEl || !regionEl || !zoneEl) return;
                 if (isPickup()) {
                     addressEl.removeAttribute('required');
-                    cityEl.removeAttribute('required');
+                    regionEl.removeAttribute('required');
+                    zoneEl.removeAttribute('required');
                 } else {
                     addressEl.setAttribute('required', 'required');
-                    cityEl.setAttribute('required', 'required');
+                    regionEl.setAttribute('required', 'required');
+                    zoneEl.setAttribute('required', 'required');
                 }
             }
             function syncEmail() {
@@ -339,6 +361,14 @@
                         syncPayButton();
                         syncEmailNote();
                     }
+                    if (e.target.name === 'delivery_option') {
+                        if (window.__dcToggleRegionWrap) {
+                            window.__dcToggleRegionWrap();
+                        }
+                        if (window.__dcFetchDeliveryOptions) {
+                            window.__dcFetchDeliveryOptions().catch(function () {});
+                        }
+                    }
                 });
                 syncAddressAndCityRequired();
                 syncEmail();
@@ -367,17 +397,26 @@
             syncDeliveryTarget();
         })();
         (function () {
-            var cityInput = document.getElementById('city');
+            var regionEl = document.getElementById('region_id');
+            var zoneEl = document.getElementById('delivery_zone_id');
+            var couponEl = document.getElementById('coupon_code');
             var list = document.getElementById('delivery-options-list');
-            if (!cityInput || !list) return;
+            var regionWrap = document.getElementById('region-zone-wrap');
+            if (!regionEl || !zoneEl || !list) return;
 
-            var endpoint = @json(route('checkout.delivery-options'));
+            var deliveryEndpoint = @json(route('checkout.delivery-options'));
+            var zonesEndpoint = @json(route('checkout.location-zones'));
             var currencySymbol = @json(config('store.currency_symbol', '₵'));
             var baseTotal = Number(@json((float) $itemsSubtotal - (float) $promoDiscountAmount));
 
             function formatGhs(amount) {
                 var n = Number(amount) || 0;
                 return currencySymbol + n.toFixed(2);
+            }
+
+            function isPickupMode() {
+                var f = document.getElementById('checkout-form');
+                return !!(f && f.querySelector('input[name="delivery_option"][value="pickup"]:checked'));
             }
 
             function getSelectedPrice() {
@@ -433,26 +472,82 @@
                 setTotals(getSelectedPrice());
             }
 
-            async function fetchOptions() {
-                if (!cityInput) return;
-                var city = cityInput.value || '';
-                var selected = (list.querySelector('input[name="delivery_option"]:checked') || {}).value || 'standard';
-
-                var params = new URLSearchParams({ city: city, selected: selected });
-                var res = await fetch(endpoint + '?' + params.toString(), { headers: { 'Accept': 'application/json' } });
+            async function loadZonesForRegion(regionId, preferredZoneId) {
+                if (!regionId) {
+                    zoneEl.innerHTML = '';
+                    return;
+                }
+                var res = await fetch(zonesEndpoint + '?region_id=' + encodeURIComponent(regionId), { headers: { 'Accept': 'application/json' } });
                 var data = await res.json();
+                var zones = data.zones || [];
+                zoneEl.innerHTML = zones.map(function (z) {
+                    var sel = preferredZoneId && String(z.id) === String(preferredZoneId);
+                    return '<option value="' + z.id + '" data-fee="' + z.fee + '"' + (sel ? ' selected' : '') + '>' + z.name + ' — ' + formatGhs(z.fee) + '</option>';
+                }).join('');
+                if (zones.length && !preferredZoneId) {
+                    zoneEl.selectedIndex = 0;
+                }
+            }
 
+            async function fetchDeliveryOptions() {
+                if (isPickupMode()) {
+                    rebuildOptions({
+                        selectedOption: 'pickup',
+                        options: [
+                            { option: 'standard', method: 'rider', price: 0, estimated_time: '—', price_note: null },
+                            { option: 'express', method: 'rider', price: 0, estimated_time: '—', price_note: null },
+                            { option: 'pickup', method: 'pickup', price: 0, estimated_time: 'immediate', price_note: null },
+                        ],
+                    });
+                    return;
+                }
+                var rid = regionEl.value;
+                var zid = zoneEl.value;
+                if (!rid || !zid) return;
+                var selected = (list.querySelector('input[name="delivery_option"]:checked') || {}).value || 'standard';
+                var coupon = couponEl ? String(couponEl.value || '') : '';
+                var params = new URLSearchParams({
+                    region_id: rid,
+                    delivery_zone_id: zid,
+                    selected: selected,
+                    coupon_code: coupon,
+                });
+                var res = await fetch(deliveryEndpoint + '?' + params.toString(), { headers: { 'Accept': 'application/json' } });
+                var data = await res.json();
                 rebuildOptions(data);
             }
 
-            cityInput.addEventListener('input', function () {
-                clearTimeout(debounce);
-                debounce = setTimeout(function () {
-                    fetchOptions().catch(function () {
-                        // Keep existing UI if fetch fails.
-                    });
-                }, 450);
+            function toggleRegionWrap() {
+                if (!regionWrap) return;
+                if (isPickupMode()) {
+                    regionWrap.classList.add('hidden');
+                } else {
+                    regionWrap.classList.remove('hidden');
+                }
+            }
+
+            regionEl.addEventListener('change', function () {
+                loadZonesForRegion(regionEl.value, null).then(function () {
+                    return fetchDeliveryOptions();
+                }).catch(function () {});
             });
+            zoneEl.addEventListener('change', function () {
+                fetchDeliveryOptions().catch(function () {});
+            });
+            if (couponEl) {
+                couponEl.addEventListener('input', function () {
+                    clearTimeout(debounce);
+                    debounce = setTimeout(function () {
+                        fetchDeliveryOptions().catch(function () {});
+                    }, 400);
+                });
+            }
+            window.__dcToggleRegionWrap = toggleRegionWrap;
+            window.__dcFetchDeliveryOptions = function () {
+                return fetchDeliveryOptions();
+            };
+            toggleRegionWrap();
+            fetchDeliveryOptions().catch(function () {});
         })();
     </script>
 @endpush

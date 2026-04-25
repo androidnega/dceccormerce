@@ -1,10 +1,11 @@
 <?php
 
+use App\Http\Middleware\CustomerMiddleware;
 use App\Http\Middleware\EnsureAdminRole;
 use App\Http\Middleware\EnsureManagerRole;
-use App\Http\Middleware\StaffMiddleware;
-use App\Http\Middleware\CustomerMiddleware;
 use App\Http\Middleware\RiderMiddleware;
+use App\Http\Middleware\StaffMiddleware;
+use App\Http\Middleware\TrustLocalLanUrls;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,7 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\TrustLocalLanUrls::class,
+            TrustLocalLanUrls::class,
+        ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'paystack/webhook',
         ]);
 
         $middleware->alias([
@@ -26,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureAdminRole::class,
             'manager' => EnsureManagerRole::class,
             'customer' => CustomerMiddleware::class,
+            'rider' => RiderMiddleware::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

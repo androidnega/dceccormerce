@@ -187,6 +187,16 @@ class OrderController extends Controller
         return back()->with('status', 'Order marked as failed.');
     }
 
+    public function cancelOrder(Order $order): RedirectResponse
+    {
+        $result = $this->orderDelivery->cancelOrder($order);
+        if (! $result['ok']) {
+            return back()->withErrors(['status' => $result['error'] ?? 'Unable to cancel order.']);
+        }
+
+        return back()->with('status', 'Order cancelled and inventory restored where applicable.');
+    }
+
     public function updateNotes(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([

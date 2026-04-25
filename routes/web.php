@@ -21,8 +21,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\GuestOrderLookupController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaystackWebhookController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Rider\RiderController as RiderRiderController;
 use App\Http\Controllers\TrackingController;
@@ -64,8 +66,13 @@ Route::get('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/delivery-options', [CheckoutController::class, 'deliveryOptions'])->name('checkout.delivery-options');
+Route::get('/checkout/location-zones', [CheckoutController::class, 'locationZones'])->name('checkout.location-zones');
 Route::get('/checkout/paystack/callback', [CheckoutController::class, 'paystackCallback'])->name('checkout.paystack.callback');
-Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::get('/checkout/success/{order_number}', [CheckoutController::class, 'success'])->name('checkout.success');
+
+Route::post('/paystack/webhook', [PaystackWebhookController::class, 'handle'])->name('paystack.webhook');
+
+Route::get('/order/lookup/{order_number}', [GuestOrderLookupController::class, 'show'])->name('orders.lookup');
 
 Route::get('/legal/refund-policy', [LegalController::class, 'refundPolicy'])->name('legal.refund-policy');
 
@@ -116,6 +123,7 @@ Route::middleware(['auth', 'staff'])->prefix('dashboard')->name('dashboard.')->g
         Route::post('/orders/{order}/delivered', [AdminOrderController::class, 'markDelivered'])->name('orders.delivered');
         Route::post('/orders/{order}/failed', [AdminOrderController::class, 'markFailed'])->name('orders.failed');
         Route::post('/orders/{order}/fail', [AdminOrderController::class, 'markFailed'])->name('orders.fail');
+        Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancelOrder'])->name('orders.cancel');
         Route::post('/orders/{order}/notes', [AdminOrderController::class, 'updateNotes'])->name('orders.notes');
         Route::get('/riders', [AdminRiderController::class, 'index'])->name('riders.index');
         Route::get('/riders/create', [AdminRiderController::class, 'create'])->name('riders.create');

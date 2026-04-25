@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             ManagerSeeder::class,
+            GhanaLocationSeeder::class,
+            CouponSeeder::class,
             HomepageSettingSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,

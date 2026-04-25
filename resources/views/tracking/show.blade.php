@@ -5,6 +5,7 @@
 @php
     use App\Support\OrderDeliveryPipeline;
     $p = OrderDeliveryPipeline::progressForCustomer($order);
+    $statusPollUrl = route('orders.track.status', ['order_number' => $order->order_number]).'?token='.urlencode((string) $order->access_token);
 @endphp
 
 @section('content')
@@ -62,7 +63,7 @@
 @push('scripts')
     <script>
         (function () {
-            var statusUrl = @json(route('orders.track.status', ['order_number' => $order->order_number]));
+            var statusUrl = @json($statusPollUrl);
             var last = @json($order->delivery_status);
             setInterval(function () {
                 fetch(statusUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
