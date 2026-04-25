@@ -30,7 +30,8 @@
                     <nav class="mt-3" aria-label="Support links">
                         <ul class="space-y-2 text-sm text-white/80">
                             <li><a href="{{ route('tracking.index') }}" class="transition hover:text-white">Track order</a></li>
-                            <li><a href="{{ route('home') }}#features" class="transition hover:text-white">Shipping &amp; returns</a></li>
+                            <li><a href="{{ route('legal.refund-policy') }}" class="transition hover:text-white">Returns &amp; refunds</a></li>
+                            <li><a href="{{ route('home') }}#features" class="transition hover:text-white">Shipping &amp; services</a></li>
                             <li><a href="{{ route('home') }}#contact" class="transition hover:text-white">Contact</a></li>
                             <li>
                                 @auth

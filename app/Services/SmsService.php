@@ -18,7 +18,7 @@ class SmsService
                 return false;
             }
 
-            $provider = (string) config('sms.provider', 'log');
+            $provider = sms_provider_resolved();
 
             return match ($provider) {
                 'arkesel' => $this->sendViaArkesel($e164, $message),
@@ -37,8 +37,8 @@ class SmsService
 
     public function isReady(): bool
     {
-        return match (config('sms.provider')) {
-            'arkesel' => (string) config('sms.api_key') !== '',
+        return match (sms_provider_resolved()) {
+            'arkesel' => sms_api_key_resolved() !== '' && trim(sms_sender_resolved()) !== '',
             'hubtel' => (string) config('sms.hubtel.client_id') !== '' && (string) config('sms.hubtel.client_secret') !== '',
             'log' => true,
             default => true,
@@ -57,9 +57,9 @@ class SmsService
 
     private function sendViaArkesel(string $e164, string $message): bool
     {
-        $key = (string) config('sms.api_key');
+        $key = sms_api_key_resolved();
         if ($key === '') {
-            Log::warning('SMS (Arkesel): SMS_API_KEY is empty.');
+            Log::warning('SMS (Arkesel): API key is empty (admin or SMS_API_KEY).');
 
             return false;
         }
@@ -67,11 +67,11 @@ class SmsService
         $to = substr($e164, 1);
         $response = Http::timeout(20)
             ->acceptJson()
-            ->get((string) config('sms.arkesel_url'), [
+            ->get(sms_arkesel_url_resolved(), [
                 'action' => 'send-sms',
                 'api_key' => $key,
                 'to' => $to,
-                'from' => (string) config('sms.sender'),
+                'from' => sms_sender_resolved(),
                 'sms' => $message,
             ]);
 
@@ -101,7 +101,7 @@ class SmsService
             ->withBasicAuth($id, $secret)
             ->acceptJson()
             ->post((string) config('sms.hubtel.send_url'), [
-                'From' => (string) config('sms.sender'),
+                'From' => sms_sender_resolved(),
                 'To' => $e164,
                 'Content' => $message,
                 'RegisteredDelivery' => true,

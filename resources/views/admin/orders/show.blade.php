@@ -30,7 +30,17 @@
                         · Delivery fee <span class="font-medium text-neutral-800">{{ format_ghs((float) $order->delivery_price) }}</span>
                     @endif
                 </p>
-                <p class="mt-1 text-xs text-neutral-600">Payment method: <span class="font-medium text-neutral-800">{{ strtoupper($order->payment_method) }}</span></p>
+                <p class="mt-1 text-xs text-neutral-600">
+                    Payment:
+                    <span class="font-medium text-neutral-800">@if ($order->payment_status === 'refunded')Refunded@elseif($order->payment_status === 'paid')Paid@else Unpaid@endif</span>
+                    · <span class="text-neutral-600">Method</span> <span class="font-medium text-neutral-800">{{ strtoupper($order->payment_method) }}</span>
+                </p>
+                @if ($order->paystack_reference)
+                    <p class="mt-1 text-xs text-neutral-600">Paystack reference <span class="font-mono font-medium text-neutral-800">{{ $order->paystack_reference }}</span></p>
+                @endif
+                @if (($order->refund_status ?? 'none') !== 'none' && $order->payment_method === 'momo')
+                    <p class="mt-1 text-xs text-neutral-600">Refund: <span class="font-medium text-neutral-800">{{ strtoupper($order->refund_status) }}</span>@if ($order->paystack_refund_id) · ref <span class="font-mono">{{ $order->paystack_refund_id }}</span>@endif @if ($order->refunded_at)<span class="text-neutral-500">({{ $order->refunded_at->format('M j, Y g:i A') }})</span>@endif</p>
+                @endif
             </div>
             @php
                 $itemsSum = $order->items->sum(fn ($i) => (float) $i->price * $i->quantity);

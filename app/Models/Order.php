@@ -26,6 +26,10 @@ use Illuminate\Support\Facades\DB;
     'rider_id',
     'failed_previous_status',
     'delivery_option',
+    'paystack_reference',
+    'refund_status',
+    'paystack_refund_id',
+    'refunded_at',
 ])]
 class Order extends Model
 {
@@ -36,7 +40,10 @@ class Order extends Model
     public const DELIVERY_STATUSES = ['pending', 'confirmed', 'prepared', 'assigned', 'on_the_way', 'delivered', 'failed'];
 
     /** @var list<string> */
-    public const PAYMENT_STATUSES = ['unpaid', 'paid'];
+    public const PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'];
+
+    /** @var list<string> */
+    public const REFUND_STATUSES = ['none', 'processing', 'completed', 'failed'];
 
     /** @var list<string> */
     public const PAYMENT_METHODS = ['cod', 'momo'];
@@ -174,6 +181,7 @@ class Order extends Model
             'total_amount' => 'decimal:2',
             'promo_discount_amount' => 'decimal:2',
             'delivery_price' => 'decimal:2',
+            'refunded_at' => 'datetime',
         ];
     }
 }

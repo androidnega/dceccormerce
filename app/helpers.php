@@ -154,3 +154,59 @@ if (! function_exists('whatsapp_notifications_enabled')) {
         return filter_var(env('WHATSAPP_NOTIFICATIONS_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
     }
 }
+
+if (! function_exists('sms_provider_resolved')) {
+    function sms_provider_resolved(): string
+    {
+        $stored = SiteSetting::get('sms_provider');
+        if ($stored !== null && $stored !== '') {
+            return (string) $stored;
+        }
+
+        return (string) config('sms.provider', 'log');
+    }
+}
+
+if (! function_exists('sms_api_key_resolved')) {
+    function sms_api_key_resolved(): string
+    {
+        $fromDb = SiteSetting::get('sms_api_key');
+
+        return (string) (($fromDb !== null && $fromDb !== '') ? $fromDb : (config('sms.api_key') ?? env('SMS_API_KEY', '')));
+    }
+}
+
+if (! function_exists('sms_sender_resolved')) {
+    function sms_sender_resolved(): string
+    {
+        $stored = SiteSetting::get('sms_sender');
+        if ($stored !== null && $stored !== '') {
+            return (string) $stored;
+        }
+
+        return (string) config('sms.sender', 'DCAPPLE');
+    }
+}
+
+if (! function_exists('sms_arkesel_url_resolved')) {
+    function sms_arkesel_url_resolved(): string
+    {
+        $stored = SiteSetting::get('sms_arkesel_url');
+        if ($stored !== null && $stored !== '') {
+            return (string) $stored;
+        }
+
+        return (string) config('sms.arkesel_url', 'https://sms.arkesel.com/sms/api');
+    }
+}
+
+if (! function_exists('arkesel_sms_ready')) {
+    function arkesel_sms_ready(): bool
+    {
+        if (sms_provider_resolved() !== 'arkesel') {
+            return false;
+        }
+
+        return sms_api_key_resolved() !== '' && trim(sms_sender_resolved()) !== '';
+    }
+}

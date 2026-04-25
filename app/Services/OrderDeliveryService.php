@@ -11,6 +11,7 @@ class OrderDeliveryService
 {
     public function __construct(
         private readonly OrderNotificationService $orderNotifications,
+        private readonly OrderPaystackRefundService $orderPaystackRefund,
     ) {}
 
     /**
@@ -95,6 +96,9 @@ class OrderDeliveryService
             $this->releaseRiderForOrder($order);
             $this->releaseDeliveryAgentForOrder($order);
         });
+
+        $order->refresh();
+        $this->orderPaystackRefund->autoRefundIfPaystackPaidOrderFailed($order);
 
         return ['ok' => true];
     }

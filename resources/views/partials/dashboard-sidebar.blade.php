@@ -19,6 +19,10 @@
         <i class="fa-solid fa-chart-pie w-4 text-center text-xs text-inherit opacity-90" aria-hidden="true"></i>
         Overview
     </a>
+    <a href="{{ route('dashboard.security.edit') }}" class="mt-0.5 flex items-center gap-2.5 rounded-md px-3 py-2 transition {{ request()->routeIs('dashboard.security.*') ? 'bg-orange-50 font-medium text-orange-700 ring-1 ring-orange-100' : 'text-slate-600 hover:bg-white hover:text-slate-900' }}">
+        <i class="fa-solid fa-key w-4 text-center text-xs text-inherit opacity-90" aria-hidden="true"></i>
+        Password
+    </a>
 
     @if ($isManager)
         <a href="{{ route('dashboard.orders.index') }}" class="flex items-center gap-2.5 rounded-md px-3 py-2 transition {{ request()->routeIs('dashboard.orders.*') ? 'bg-orange-50 font-medium text-orange-700 ring-1 ring-orange-100' : 'text-slate-600 hover:bg-white hover:text-slate-900' }}">

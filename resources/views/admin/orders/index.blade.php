@@ -54,7 +54,7 @@
                                 <span class="rounded-full bg-neutral-50 px-2.5 py-0.5 text-xs font-medium text-neutral-600">{{ strtoupper($order->payment_method) }}</span>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="rounded-full bg-neutral-50 px-2.5 py-0.5 text-xs font-medium text-neutral-600">{{ $order->payment_status === 'paid' ? 'Paid' : 'Unpaid' }}</span>
+                                <span class="rounded-full bg-neutral-50 px-2.5 py-0.5 text-xs font-medium text-neutral-600">@if ($order->payment_status === 'refunded')Refunded@elseif($order->payment_status === 'paid')Paid@else Unpaid@endif</span>
                             </td>
                             <td class="px-6 py-4">
                                 @php

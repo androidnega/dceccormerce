@@ -1,28 +1,30 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountSecurityController as AdminAccountSecurityController;
+use App\Http\Controllers\Admin\CategoryBannerController as AdminCategoryBannerController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\DeliveryAgentController as AdminDeliveryAgentController;
+use App\Http\Controllers\Admin\DeliveryRuleController as AdminDeliveryRuleController;
 use App\Http\Controllers\Admin\HeroSlideController as AdminHeroSlideController;
-use App\Http\Controllers\Admin\HomepageSettingsController as AdminHomepageSettingsController;
-use App\Http\Controllers\Admin\StoreProductDisplayController as AdminStoreProductDisplayController;
-use App\Http\Controllers\Admin\IntegrationsController as AdminIntegrationsController;
 use App\Http\Controllers\Admin\HomepageSectionController as AdminHomepageSectionController;
+use App\Http\Controllers\Admin\HomepageSettingsController as AdminHomepageSettingsController;
+use App\Http\Controllers\Admin\IntegrationsController as AdminIntegrationsController;
 use App\Http\Controllers\Admin\NewsPostController as AdminNewsPostController;
-use App\Http\Controllers\Admin\PromoController as AdminPromoController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\PromoController as AdminPromoController;
 use App\Http\Controllers\Admin\RiderController as AdminRiderController;
-use App\Http\Controllers\Admin\CategoryBannerController as AdminCategoryBannerController;
+use App\Http\Controllers\Admin\SaleSpotlightController as AdminSaleSpotlightController;
+use App\Http\Controllers\Admin\StoreProductDisplayController as AdminStoreProductDisplayController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Rider\RiderController as RiderRiderController;
-use App\Http\Controllers\Admin\DeliveryAgentController as AdminDeliveryAgentController;
-use App\Http\Controllers\Admin\DeliveryRuleController as AdminDeliveryRuleController;
-use App\Http\Controllers\Admin\SaleSpotlightController as AdminSaleSpotlightController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
@@ -62,7 +64,10 @@ Route::get('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/delivery-options', [CheckoutController::class, 'deliveryOptions'])->name('checkout.delivery-options');
+Route::get('/checkout/paystack/callback', [CheckoutController::class, 'paystackCallback'])->name('checkout.paystack.callback');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+
+Route::get('/legal/refund-policy', [LegalController::class, 'refundPolicy'])->name('legal.refund-policy');
 
 Route::get('/track', [TrackingController::class, 'index'])->name('tracking.index');
 Route::post('/track', [TrackingController::class, 'lookup'])->name('tracking.lookup');
@@ -95,6 +100,9 @@ Route::middleware(['auth', 'customer'])->prefix('account')->name('account.')->gr
 });
 
 Route::middleware(['auth', 'staff'])->prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::get('security', [AdminAccountSecurityController::class, 'edit'])->name('security.edit');
+    Route::put('security', [AdminAccountSecurityController::class, 'update'])->name('security.update');
+
     Route::get('/', [AdminController::class, 'dashboard'])->name('index');
 
     Route::middleware('manager')->group(function () {

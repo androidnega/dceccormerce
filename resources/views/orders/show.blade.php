@@ -29,7 +29,7 @@
             <div class="mt-8 flex flex-wrap gap-2 border-t border-neutral-100 pt-8">
                 <span class="inline-flex rounded-full bg-neutral-100 px-4 py-1.5 text-xs font-medium text-neutral-800">Status: {{ str_replace('_', ' ', $order->delivery_status) }}</span>
                 <span class="inline-flex rounded-full bg-neutral-50 px-4 py-1.5 text-xs font-medium text-neutral-600">{{ strtoupper($order->payment_method) }}</span>
-                <span class="inline-flex rounded-full bg-neutral-50 px-4 py-1.5 text-xs font-medium text-neutral-600">Payment: {{ $order->payment_status === 'paid' ? 'Paid' : 'Unpaid' }}</span>
+                <span class="inline-flex rounded-full bg-neutral-50 px-4 py-1.5 text-xs font-medium text-neutral-600">Payment: @if ($order->payment_status === 'refunded')Refunded@elseif($order->payment_status === 'paid')Paid@else Unpaid@endif</span>
             </div>
             @if ($order->rider)
                 <div class="mt-4 rounded-xl border border-neutral-100 bg-neutral-50 p-4 text-sm text-neutral-700">

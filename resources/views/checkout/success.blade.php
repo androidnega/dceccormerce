@@ -7,6 +7,9 @@
         <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900">
             <p class="font-semibold">Order placed successfully</p>
             <p class="mt-1 text-sm">Thank you. Your order number is <span class="font-mono font-bold">{{ $order->order_number }}</span>.</p>
+            @if ($order->payment_status === 'paid' && $order->payment_method === 'momo')
+                <p class="mt-2 text-sm">Your payment was applied successfully (Paystack / Mobile Money or card).</p>
+            @endif
             <p class="mt-1 text-sm">
                 <a href="{{ route('tracking.index') }}" class="font-medium underline">Track your order</a>
                 or open

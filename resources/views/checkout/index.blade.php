@@ -12,9 +12,9 @@
             <nav class="checkout-progress mt-8 flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 sm:text-xs" aria-label="Checkout progress">
                 <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-600">Cart</span>
                 <span class="text-slate-300" aria-hidden="true">→</span>
-                <span class="rounded-full bg-[#0057b8] px-3 py-1.5 font-semibold text-white shadow-sm">Info</span>
+                <span class="rounded-full bg-[#0057b8] px-3 py-1.5 font-semibold text-white shadow-sm">Info &amp; address</span>
                 <span class="text-slate-300" aria-hidden="true">→</span>
-                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-600">Payment</span>
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-600" id="nav-step-payment">Pay</span>
                 <span class="text-slate-300" aria-hidden="true">→</span>
                 <span class="rounded-full border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-500">Complete</span>
             </nav>
@@ -22,6 +22,12 @@
 
         <div class="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-12">
             <div class="lg:col-span-7">
+                @php
+                    $paymentMethodOld = old('payment_method', 'cod');
+                    if (! $paystackReady && $paymentMethodOld === 'momo') {
+                        $paymentMethodOld = 'cod';
+                    }
+                @endphp
                 <form action="{{ route('checkout.store') }}" method="post" class="checkout-form space-y-8" id="checkout-form">
                     @csrf
 
@@ -40,6 +46,19 @@
                                 <p class="mt-1 text-sm text-slate-600">Who is placing this order — we&apos;ll use this for order updates and payment questions.</p>
                                 <div class="mt-4 space-y-4">
                                     <div>
+                                        <label for="email" class="block text-sm font-medium text-slate-700">Email
+                                            @if($paystackReady)
+                                                <span class="text-sm font-normal text-slate-500">(required for Mobile Money — used by Paystack)</span>
+                                            @endif
+                                        </label>
+                                        <input type="email" name="email" id="email" value="{{ old('email') }}" @if($paystackReady) data-email-paystack="1" @endif autocomplete="email" placeholder="you@example.com"
+                                            class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('email') border-red-500 ring-1 ring-red-500 @enderror">
+                                        @if(!$paystackReady)
+                                            <p class="mt-1 text-xs text-slate-500">Optional for cash on delivery. Required when you pay with Mobile Money online.</p>
+                                        @endif
+                                        @error('email')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
                                         <label for="full_name" class="block text-sm font-medium text-slate-700">Full name <span class="text-red-600">*</span></label>
                                         <input type="text" name="full_name" id="full_name" value="{{ old('full_name') }}" required autocomplete="name"
                                             class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('full_name') border-red-500 ring-1 ring-red-500 @enderror">
@@ -55,8 +74,8 @@
                             </div>
 
                             <div class="border-t border-slate-100 pt-10">
-                                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Delivery location &amp; recipient</h3>
-                                <p class="mt-1 text-sm text-slate-600">Street address and who will receive the package (can be you or someone else).</p>
+                                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Delivery address &amp; recipient</h3>
+                                <p class="mt-1 text-sm text-slate-600" id="delivery-hint">Choose where the order should go. For <strong>delivery</strong>, the street and city/area are required. For <strong>store pickup</strong>, you can leave address blank.</p>
 
                                 <div class="mt-4 rounded-xl border border-slate-200/90 bg-slate-50/60 p-4">
                                     <input type="hidden" name="recipient_same_as_contact" value="0">
@@ -84,15 +103,16 @@
 
                                 <div class="mt-6 space-y-4">
                                     <div>
-                                        <label for="address" class="block text-sm font-medium text-slate-700">Street address <span class="text-red-600">*</span></label>
-                                        <input type="text" name="address" id="address" value="{{ old('address') }}" required autocomplete="street-address"
+                                        <label for="address" class="block text-sm font-medium text-slate-700"><span id="address-label-main">Delivery street address</span> <span id="address-req" class="text-red-600">*</span></label>
+                                        <input type="text" name="address" id="address" value="{{ old('address') }}" data-address-input autocomplete="street-address" placeholder="House / building, street, area, GPS description"
                                             class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('address') border-red-500 ring-1 ring-red-500 @enderror">
                                         @error('address')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                     </div>
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div>
-                                            <label for="city" class="block text-sm font-medium text-slate-700">City <span class="font-normal text-slate-400">(optional)</span></label>
-                                            <input type="text" name="city" id="city" value="{{ old('city') }}" autocomplete="address-level2"
+                                            <label for="city" class="block text-sm font-medium text-slate-700" id="city-label">City or area <span id="city-req" class="text-red-600">*</span></label>
+                                            <p class="mt-0.5 text-xs text-slate-500" id="city-hint">Used to calculate delivery. Use “Accra”, “Takoradi”, or <span class="whitespace-nowrap">“Outside city”</span> if you are outside our main zones.</p>
+                                            <input type="text" name="city" id="city" value="{{ old('city') }}" autocomplete="address-level2" placeholder="e.g. Accra, East Legon"
                                                 class="store-input-focus mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm placeholder:text-slate-400 @error('city') border-red-500 ring-1 ring-red-500 @enderror">
                                             @error('city')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                         </div>
@@ -163,17 +183,24 @@
                         </div>
                         <div class="mt-6 space-y-3">
                             <label class="checkout-option-label flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/40 px-4 py-3.5 text-sm font-medium text-slate-800 transition hover:border-slate-300 has-[:checked]:border-[#0057b8] has-[:checked]:bg-[#0057b8]/[0.06] has-[:checked]:ring-2 has-[:checked]:ring-[#0057b8]/20">
-                                <input type="radio" name="payment_method" value="cod" class="text-[#0057b8] focus:ring-[#0057b8]" @checked(old('payment_method', 'cod') === 'cod')>
-                                Cash on Delivery (COD)
+                                <input type="radio" name="payment_method" value="cod" class="text-[#0057b8] focus:ring-[#0057b8] js-checkout-payment" @checked($paymentMethodOld === 'cod')>
+                                <span>Pay on delivery (cash when you receive the order)</span>
                             </label>
-                            <label class="checkout-option-label flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/40 px-4 py-3.5 text-sm font-medium text-slate-800 transition hover:border-slate-300 has-[:checked]:border-[#0057b8] has-[:checked]:bg-[#0057b8]/[0.06] has-[:checked]:ring-2 has-[:checked]:ring-[#0057b8]/20">
-                                <input type="radio" name="payment_method" value="momo" class="text-[#0057b8] focus:ring-[#0057b8]" @checked(old('payment_method') === 'momo')>
-                                Mobile Money (MoMo)
+                            <label class="checkout-option-label flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/40 px-4 py-3.5 text-sm text-slate-800 transition {{ $paystackReady ? 'cursor-pointer hover:border-slate-300' : 'cursor-not-allowed opacity-60' }} has-[:checked]:border-[#0057b8] has-[:checked]:bg-[#0057b8]/[0.06] has-[:checked]:ring-2 has-[:checked]:ring-[#0057b8]/20">
+                                <input type="radio" name="payment_method" value="momo" class="js-checkout-payment mt-0.5 text-[#0057b8] focus:ring-[#0057b8]" @disabled(! $paystackReady) @checked($paystackReady && $paymentMethodOld === 'momo')>
+                                <span>
+                                    <span class="font-medium">Mobile Money</span> <span class="text-slate-500">(Paystack — you’ll be taken to a secure page to pay with your wallet or card; MTN, Vodafone, AirtelTigo, etc. where enabled)</span>
+                                    @if (! $paystackReady)
+                                        <span class="mt-1 block text-xs text-amber-800">This option will be available after the store connects Paystack in the admin.</span>
+                                    @endif
+                                </span>
                             </label>
                         </div>
                         @error('payment_method')<p class="mt-3 text-sm text-red-600">{{ $message }}</p>@enderror
 
-                        <button type="submit" class="store-btn-press mt-8 w-full rounded-xl bg-[#0057b8] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#00479a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0057b8] focus-visible:ring-offset-2">
+                        <p class="mt-3 text-xs text-slate-500" id="checkout-email-note" @if($paystackReady) hidden @endif>With cash on delivery, you can continue without a payment email. For Mobile Money online, a valid email is required.</p>
+
+                        <button type="submit" id="checkout-submit" class="store-btn-press mt-8 w-full rounded-xl bg-[#0057b8] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#00479a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0057b8] focus-visible:ring-offset-2">
                             Place order
                         </button>
                     </section>
@@ -228,6 +255,85 @@
     </div>
 @push('scripts')
     <script>
+        (function () {
+            var paystackReady = @json($paystackReady);
+            var addressEl = document.getElementById('address');
+            var cityEl = document.getElementById('city');
+            var emailEl = document.getElementById('email');
+            var form = document.getElementById('checkout-form');
+            var submitBtn = document.getElementById('checkout-submit');
+            var emailNote = document.getElementById('checkout-email-note');
+            var navPay = document.getElementById('nav-step-payment');
+
+            function isPickup() {
+                return !!(form && form.querySelector('input[name="delivery_option"][value="pickup"]:checked'));
+            }
+            function isMomo() {
+                return !!(form && form.querySelector('input[name="payment_method"][value="momo"]:checked'));
+            }
+            function syncAddressAndCityRequired() {
+                if (!addressEl || !cityEl) return;
+                if (isPickup()) {
+                    addressEl.removeAttribute('required');
+                    cityEl.removeAttribute('required');
+                } else {
+                    addressEl.setAttribute('required', 'required');
+                    cityEl.setAttribute('required', 'required');
+                }
+            }
+            function syncEmail() {
+                if (!emailEl) return;
+                if (paystackReady && isMomo()) {
+                    emailEl.setAttribute('required', 'required');
+                } else {
+                    emailEl.removeAttribute('required');
+                }
+            }
+            function syncPayButton() {
+                if (!submitBtn || !form) return;
+                if (paystackReady && isMomo()) {
+                    submitBtn.textContent = 'Continue to secure payment (Paystack)';
+                    if (navPay) {
+                        navPay.classList.add('bg-[#0057b8]', 'font-semibold', 'text-white', 'shadow-sm');
+                        navPay.classList.remove('border', 'bg-white', 'text-slate-600');
+                    }
+                } else {
+                    submitBtn.textContent = 'Place order';
+                    if (navPay) {
+                        navPay.classList.remove('bg-[#0057b8]', 'font-semibold', 'text-white', 'shadow-sm');
+                        navPay.classList.add('border', 'border-slate-200', 'bg-white', 'text-slate-600');
+                    }
+                }
+            }
+            function syncEmailNote() {
+                if (!emailNote) return;
+                if (paystackReady && isMomo()) {
+                    emailNote.removeAttribute('hidden');
+                    emailNote.textContent = 'You will be redirected to Paystack to pay with mobile money (or card). Use the same email for your receipt.';
+                } else {
+                    if (paystackReady) emailNote.setAttribute('hidden', 'hidden');
+                    else {
+                        emailNote.removeAttribute('hidden');
+                        emailNote.textContent = 'With cash on delivery, you can continue without a payment email. For Mobile Money online, a valid email is required.';
+                    }
+                }
+            }
+            if (form) {
+                form.addEventListener('change', function (e) {
+                    if (!e.target) return;
+                    if (e.target.name === 'delivery_option' || e.target.name === 'payment_method') {
+                        syncAddressAndCityRequired();
+                        syncEmail();
+                        syncPayButton();
+                        syncEmailNote();
+                    }
+                });
+                syncAddressAndCityRequired();
+                syncEmail();
+                syncPayButton();
+                syncEmailNote();
+            }
+        })();
         (function () {
             var cb = document.getElementById('recipient_same_as_contact');
             var wrap = document.getElementById('recipient-fields');

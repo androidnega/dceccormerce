@@ -19,6 +19,7 @@ class SiteSetting extends Model
     {
         return [
             'paystack_secret_key',
+            'sms_api_key',
         ];
     }
 
