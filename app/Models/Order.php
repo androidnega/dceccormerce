@@ -11,8 +11,12 @@ use Illuminate\Support\Facades\DB;
 
 #[Fillable([
     'user_id',
+    'region_id',
+    'delivery_zone_id',
     'total_amount',
     'promo_discount_amount',
+    'discount_amount',
+    'coupon_code',
     'status',
     'payment_status',
     'order_number',
@@ -20,6 +24,7 @@ use Illuminate\Support\Facades\DB;
     'delivery_method',
     'delivery_zone',
     'delivery_price',
+    'delivery_fee',
     'delivery_agent_id',
     'payment_method',
     'notes',
@@ -28,16 +33,20 @@ use Illuminate\Support\Facades\DB;
     'delivery_option',
     'paystack_reference',
     'refund_status',
+    'refund_failed',
     'paystack_refund_id',
     'refunded_at',
+    'customer_email',
+    'access_token',
+    'stock_restored_at',
 ])]
 class Order extends Model
 {
     /** @var list<string> */
-    public const STATUSES = ['pending', 'confirmed', 'prepared', 'assigned', 'on_the_way', 'delivered', 'failed'];
+    public const STATUSES = ['pending', 'confirmed', 'prepared', 'assigned', 'on_the_way', 'delivered', 'failed', 'cancelled'];
 
     /** @var list<string> */
-    public const DELIVERY_STATUSES = ['pending', 'confirmed', 'prepared', 'assigned', 'on_the_way', 'delivered', 'failed'];
+    public const DELIVERY_STATUSES = ['pending', 'confirmed', 'prepared', 'assigned', 'on_the_way', 'delivered', 'failed', 'cancelled'];
 
     /** @var list<string> */
     public const PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'];
@@ -83,6 +92,7 @@ class Order extends Model
                 'on_the_way' => [],
                 'delivered' => [],
                 'failed' => [],
+                'cancelled' => [],
             ];
 
             return in_array($target, $map[$deliveryStatus] ?? [], true);
@@ -96,6 +106,7 @@ class Order extends Model
             'on_the_way' => ['delivered', 'failed'],
             'delivered' => [],
             'failed' => [],
+            'cancelled' => [],
         ];
 
         return in_array($target, $map[$deliveryStatus] ?? [], true);
@@ -119,6 +130,22 @@ class Order extends Model
         return sprintf('%s%04d', $prefix, $lastSequence + 1);
     }
 
+    public static function findByOrderNumberAndAccessToken(string $orderNumber, string $accessToken): ?self
+    {
+        $accessToken = trim($accessToken);
+        if ($accessToken === '') {
+            return null;
+        }
+
+        $normalized = strtoupper(trim($orderNumber));
+        $normalized = preg_replace('/\s+/', '', $normalized) ?? $normalized;
+
+        return static::query()
+            ->whereRaw('UPPER(order_number) = ?', [$normalized])
+            ->where('access_token', $accessToken)
+            ->first();
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Order $order): void {
@@ -138,6 +165,22 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return BelongsTo<Region, $this>
+     */
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
+    }
+
+    /**
+     * @return BelongsTo<DeliveryZone, $this>
+     */
+    public function selectedDeliveryZone(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryZone::class, 'delivery_zone_id');
     }
 
     /**
@@ -180,8 +223,12 @@ class Order extends Model
         return [
             'total_amount' => 'decimal:2',
             'promo_discount_amount' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
             'delivery_price' => 'decimal:2',
+            'delivery_fee' => 'decimal:2',
             'refunded_at' => 'datetime',
+            'stock_restored_at' => 'datetime',
+            'refund_failed' => 'boolean',
         ];
     }
 }
