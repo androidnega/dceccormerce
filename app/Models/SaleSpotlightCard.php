@@ -55,4 +55,3 @@ class SaleSpotlightCard extends Model
         return '/storage/'.$path;
     }
 }
-

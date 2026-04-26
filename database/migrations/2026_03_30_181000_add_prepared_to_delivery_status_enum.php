@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Order;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -7,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Align MySQL ENUM with {@see \App\Models\Order::DELIVERY_STATUSES} (includes "prepared").
+     * Align MySQL ENUM with {@see Order::DELIVERY_STATUSES} (includes "prepared").
      */
     public function up(): void
     {

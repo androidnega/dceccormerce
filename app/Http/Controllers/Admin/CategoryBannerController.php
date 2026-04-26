@@ -181,4 +181,3 @@ class CategoryBannerController extends Controller
         Storage::disk('public')->delete($path);
     }
 }
-

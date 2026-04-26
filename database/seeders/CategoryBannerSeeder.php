@@ -53,4 +53,3 @@ class CategoryBannerSeeder extends Seeder
         ]);
     }
 }
-

@@ -78,7 +78,7 @@ class HomepageSectionSeeder extends Seeder
         HomepageSection::query()->create([
             'type' => HomepageSection::TYPE_PRODUCT_GRID,
             'title' => 'New arrivals',
-            'subtitle' => 'Fresh stock in ' . config('store.currency_code'),
+            'subtitle' => 'Fresh stock in '.config('store.currency_code'),
             'image' => null,
             'link' => null,
             'config' => [

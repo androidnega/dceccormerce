@@ -95,7 +95,7 @@ class SaleSpotlightController extends Controller
 
                 $card = SaleSpotlightCard::query()->where('position', $pos)->first();
                 if ($card === null) {
-                    $card = new SaleSpotlightCard();
+                    $card = new SaleSpotlightCard;
                     $card->position = $pos;
                 }
 
@@ -127,4 +127,3 @@ class SaleSpotlightController extends Controller
             ->with('status', 'On sale spotlight updated.');
     }
 }
-

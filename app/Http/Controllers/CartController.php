@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Support\CartSession;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class CartController extends Controller
 {
     /**
      * @param  array<int, array<string, mixed>>  $lines
-     * @return \Illuminate\Database\Eloquent\Collection<int, Product>
+     * @return Collection<int, Product>
      */
     private function recommendedForCart(array $lines)
     {

@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\DeliveryRule;
+
 /**
  * Adjusts zone-based delivery option prices using store policy (config/delivery.php):
  * cart subtotal threshold for free standard delivery, per-unit fee reductions,
- * and volume tiers. Base prices still come from {@see \App\Models\DeliveryRule} per zone.
+ * and volume tiers. Base prices still come from {@see DeliveryRule} per zone.
  */
 class DeliveryPricingService
 {

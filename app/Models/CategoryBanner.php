@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
 class CategoryBanner extends Model
 {
     public const TYPE_IMAGE = 'image_card';
+
     public const TYPE_VIDEO = 'video_card';
 
     /** @var list<string> */
@@ -47,7 +48,7 @@ class CategoryBanner extends Model
     }
 
     /**
-     * @param Builder<CategoryBanner> $query
+     * @param  Builder<CategoryBanner>  $query
      * @return Builder<CategoryBanner>
      */
     public function scopeActiveOrdered(Builder $query): Builder
@@ -120,4 +121,3 @@ class CategoryBanner extends Model
         return null;
     }
 }
-

@@ -23,4 +23,3 @@ class DeliveryRule extends Model
         ];
     }
 }
-
