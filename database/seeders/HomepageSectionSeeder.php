@@ -35,7 +35,7 @@ class HomepageSectionSeeder extends Seeder
                     [
                         'title' => 'MacBook',
                         'subtitle' => 'Pro power for work & study',
-                        'image' => 'images/category-macbook.png',
+                        'image' => 'images/category-flagship.svg',
                         'link' => '/products?category=macbooks',
                         'layout' => 'narrow',
                         'bg_color' => '#9b5a63',
@@ -44,7 +44,7 @@ class HomepageSectionSeeder extends Seeder
                     [
                         'title' => 'iPhone',
                         'subtitle' => 'Latest models · Unlocked',
-                        'image' => 'images/category-iphone.png',
+                        'image' => 'images/category-stay-connected.svg',
                         'link' => '/products?category=iphones',
                         'layout' => 'narrow',
                         'bg_color' => '#5f7d75',
@@ -53,7 +53,7 @@ class HomepageSectionSeeder extends Seeder
                     [
                         'title' => 'AirPods',
                         'subtitle' => 'Feel the Music, Live the Moment',
-                        'image' => 'images/category-shop-hero.png',
+                        'image' => 'images/logo.svg',
                         'link' => '/products?category=airpods',
                         'layout' => 'wide',
                         'cta_label' => 'Shop now',
@@ -68,7 +68,7 @@ class HomepageSectionSeeder extends Seeder
             'type' => HomepageSection::TYPE_FEATURED_PROMO,
             'title' => 'Elegant collection',
             'subtitle' => 'Designed for a modern lifestyle — premium devices, careful curation, and service you can trust.',
-            'image' => 'images/ss2_copy_900x.webp',
+            'image' => 'images/category-flagship.svg',
             'link' => '/products',
             'config' => null,
             'position' => 20,

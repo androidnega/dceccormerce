@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Support\RemoteAssetMirror;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,8 +23,8 @@ class ProductSeeder extends Seeder
 
             $categoryIds = Category::query()->pluck('id', 'slug')->all();
 
-            // Product photos: Wikimedia Commons (stable upload.wikimedia.org URLs, CC-licensed).
-            // iPhones include multiple images per product for homepage color swatches.
+            // Product photos: Wikimedia Commons (CC-licensed). Each file is mirrored into
+            // storage/app/public/products so the storefront serves images from this server.
             $items = [
                 ['cat' => 'iphones', 'name' => 'iPhone 15 Pro Max', 'price' => 1199, 'stock' => 40, 'imgs' => [
                     'https://upload.wikimedia.org/wikipedia/commons/4/42/Front_of_iPhone_15_Pro_Max.jpg',
@@ -86,9 +87,18 @@ class ProductSeeder extends Seeder
                 $imageUrls = $row['imgs'] ?? (isset($row['img']) ? [$row['img']] : []);
                 $colors = $row['colors'] ?? [];
                 foreach ($imageUrls as $sort => $url) {
+                    $basename = 'p'.$product->id.'-'.$sort;
+                    $stored = RemoteAssetMirror::mirrorToPublicDisk($url, 'products', $basename)
+                        ?? RemoteAssetMirror::copyPublicAssetToPublicDisk(
+                            'images/category-flagship.svg',
+                            'products/'.$basename.'-placeholder.svg',
+                        );
+                    if ($stored === null) {
+                        continue;
+                    }
                     ProductImage::query()->create([
                         'product_id' => $product->id,
-                        'image_path' => $url,
+                        'image_path' => $stored,
                         'sort_order' => $sort,
                         'color_label' => $colors[$sort] ?? null,
                     ]);

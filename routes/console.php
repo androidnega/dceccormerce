@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\ProductImage;
 use App\Models\User;
+use App\Support\RemoteAssetMirror;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -54,3 +56,42 @@ Artisan::command('admin:password {email? : Admin user email (default: first user
 
     return 0;
 })->purpose('Set the password for an admin user (interactive, or use --password= for scripts)');
+
+Artisan::command('media:mirror-remote-product-images', function (): int {
+    $this->info('Mirroring remote product_images rows into storage/app/public/products …');
+
+    $count = 0;
+    $failed = 0;
+    $io = $this;
+
+    ProductImage::query()
+        ->where('image_path', 'like', 'http%')
+        ->orderBy('id')
+        ->chunkById(50, function ($images) use (&$count, &$failed, $io): void {
+            foreach ($images as $image) {
+                $url = (string) $image->image_path;
+                $basename = 'migrated-'.$image->id;
+                $stored = RemoteAssetMirror::mirrorToPublicDisk($url, 'products', $basename)
+                    ?? RemoteAssetMirror::copyPublicAssetToPublicDisk(
+                        'images/category-flagship.svg',
+                        'products/'.$basename.'-placeholder.svg',
+                    );
+
+                if ($stored === null) {
+                    $io->warn("Skip #{$image->id}: could not mirror or copy placeholder.");
+                    $failed++;
+
+                    continue;
+                }
+
+                $image->image_path = $stored;
+                $image->save();
+                $io->line("OK #{$image->id} → {$stored}");
+                $count++;
+            }
+        });
+
+    $this->info("Done. Updated: {$count}, skipped: {$failed}.");
+
+    return 0;
+})->purpose('Download remote product image URLs into local public disk (run on server after git pull)');

@@ -30,8 +30,8 @@ return new class extends Migration
                 }
 
                 $next = $items;
-                $next[0]['image'] = 'images/category-macbook.png';
-                $next[1]['image'] = 'images/category-iphone.png';
+                $next[0]['image'] = 'images/category-flagship.svg';
+                $next[1]['image'] = 'images/category-stay-connected.svg';
 
                 $section->update([
                     'config' => array_merge($config, ['items' => $next]),
