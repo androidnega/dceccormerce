@@ -2,7 +2,7 @@
 
 @section('title', $product->name . ' — ' . config('app.name'))
 
-@section('main_class', 'mx-auto w-full max-w-[1200px] px-5 py-10 sm:px-6 lg:px-8 lg:py-12')
+@section('main_class', 'mx-auto w-full min-w-0 max-w-[1200px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12')
 
 @section('content')
     @php
@@ -24,7 +24,7 @@
         <span class="text-neutral-300" aria-hidden="true">/</span>
         <a href="{{ route('shop.category', $product->category) }}" class="transition hover:text-primary-800">{{ $product->category->name }}</a>
         <span class="text-neutral-300" aria-hidden="true">/</span>
-        <span class="font-medium text-neutral-800">{{ $product->name }}</span>
+        <span class="min-w-0 max-w-full break-words font-medium text-neutral-800">{{ $product->name }}</span>
     </nav>
 
     <div class="grid gap-10 border-b border-neutral-100 pb-12 lg:grid-cols-2 lg:gap-[50px] lg:items-start lg:pb-14">

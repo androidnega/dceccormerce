@@ -3,7 +3,7 @@
 @section('title', 'My orders — ' . config('app.name'))
 
 @section('content')
-    <div class="mx-auto max-w-3xl">
+    <div class="mx-auto w-full max-w-3xl min-w-0">
         <p class="text-xs font-medium uppercase tracking-widest text-neutral-500">Apple products &amp; accessories</p>
         <h1 class="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">My orders</h1>
         <p class="mt-2 text-sm text-neutral-500">Track status and payment for your purchases. Totals are in Ghana cedis ({{ config('store.currency_code') }}).</p>

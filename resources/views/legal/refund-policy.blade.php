@@ -1,7 +1,7 @@
 @extends('layout')
 
 @section('title', 'Return & Refund policy — ' . config('app.name'))
-@section('main_class', 'w-full flex-1 bg-slate-50/80')
+@section('main_class', 'w-full min-w-0 flex-1 bg-slate-50/80')
 
 @section('content')
     <div class="store-box max-w-3xl py-10 sm:py-14">

@@ -3,11 +3,13 @@
 @section('title', 'Order ' . $order->order_number . ' — ' . config('app.name'))
 
 @section('content')
-    <div class="mx-auto max-w-3xl">
-        <a href="{{ route('account.orders.index') }}" class="text-sm text-neutral-500 hover:text-neutral-900">&larr; My orders</a>
-        @if ($order->access_token)
-            <a href="{{ route('orders.track', ['order_number' => $order->order_number]).'?token='.urlencode((string) $order->access_token) }}" class="ml-4 text-sm text-neutral-700 underline">Track delivery</a>
-        @endif
+    <div class="mx-auto w-full min-w-0 max-w-3xl">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <a href="{{ route('account.orders.index') }}" class="text-sm text-neutral-500 hover:text-neutral-900">&larr; My orders</a>
+            @if ($order->access_token)
+                <a href="{{ route('orders.track', ['order_number' => $order->order_number]).'?token='.urlencode((string) $order->access_token) }}" class="text-sm text-neutral-700 underline">Track delivery</a>
+            @endif
+        </div>
 
         @php
             use App\Support\OrderDeliveryPipeline;

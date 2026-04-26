@@ -1,7 +1,7 @@
 @extends('layout')
 
 @section('title', 'Products — ' . config('app.name'))
-@section('main_class', 'w-full flex-1 bg-gray-50')
+@section('main_class', 'w-full min-w-0 flex-1 bg-gray-50')
 
 @section('content')
     @php

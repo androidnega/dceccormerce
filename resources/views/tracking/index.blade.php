@@ -3,7 +3,7 @@
 @section('title', 'Track order — ' . config('app.name'))
 
 @section('content')
-    <div class="mx-auto max-w-lg px-4 sm:px-0">
+    <div class="mx-auto w-full min-w-0 max-w-lg px-0 sm:px-0">
         <h1 class="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Track your order</h1>
         <p class="mt-2 text-sm text-neutral-600">Enter the order number from your confirmation (for example <span class="font-mono text-neutral-800">DCA-2026-0001</span>).</p>
 

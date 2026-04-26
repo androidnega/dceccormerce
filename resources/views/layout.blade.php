@@ -52,26 +52,26 @@
     </script>
     @include('partials.store-styles')
 </head>
-<body class="store-theme flex min-h-screen flex-col bg-white font-sans text-slate-900 antialiased">
+<body class="store-theme flex min-h-screen min-w-0 flex-col bg-white font-sans text-slate-900 antialiased">
     @include('partials.store-header')
 
-    <main class="@yield('main_class', 'mx-auto w-full max-w-6xl flex-1 px-4 py-10')">
+    <main class="@yield('main_class', 'mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10')">
         @if (session('status'))
-            <div class="mx-auto mb-6 max-w-6xl px-4 sm:px-6">
+            <div class="mx-auto mb-6 max-w-6xl min-w-0 px-0 sm:px-2">
                 <div class="rounded-2xl border border-primary-200 bg-white px-4 py-3 text-sm text-primary-900">
                     {{ session('status') }}
                 </div>
             </div>
         @endif
         @if ($errors->any())
-            <div class="mx-auto mb-6 max-w-6xl px-4 sm:px-6">
-            <div class="rounded-2xl border border-primary-200 bg-[#fff8cc] px-4 py-3 text-sm text-primary-900">
-                <ul class="list-disc space-y-1 pl-5">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
+            <div class="mx-auto mb-6 max-w-6xl min-w-0 px-0 sm:px-2">
+                <div class="rounded-2xl border border-primary-200 bg-[#fff8cc] px-4 py-3 text-sm text-primary-900">
+                    <ul class="list-disc space-y-1 pl-5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         @endif
         @yield('content')
@@ -83,7 +83,7 @@
     @include('products.partials.product-quick-view-modal')
     @include('partials.store-storefront-scripts')
 
-    <button type="button" id="store-scroll-top" class="fixed bottom-6 right-5 z-[60] flex h-11 w-11 items-center justify-center rounded bg-[#0057b8] text-white shadow-lg transition hover:bg-[#00479a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0057b8] focus-visible:ring-offset-2 md:bottom-8 md:right-8" aria-label="Back to top" hidden>
+    <button type="button" id="store-scroll-top" class="fixed z-[60] flex h-11 w-11 items-center justify-center rounded bg-[#0057b8] text-white shadow-lg transition hover:bg-[#00479a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0057b8] focus-visible:ring-offset-2" aria-label="Back to top" hidden>
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>
     </button>
     <script>

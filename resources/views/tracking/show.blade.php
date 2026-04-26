@@ -9,7 +9,7 @@
 @endphp
 
 @section('content')
-    <div class="mx-auto max-w-lg px-4 sm:max-w-xl sm:px-0">
+    <div class="mx-auto w-full min-w-0 max-w-lg px-0 sm:max-w-xl sm:px-0">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Track your order</h1>

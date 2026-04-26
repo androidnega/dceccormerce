@@ -6,6 +6,37 @@
         --store-glow: rgba(0, 87, 184, 0.28);
         --store-box-max: 1280px;
     }
+    /* Mobile: avoid horizontal scroll from full-bleed sections, wide flex rows, or long tokens. */
+    html {
+        -webkit-text-size-adjust: 100%;
+        overflow-x: clip;
+    }
+    @supports not (overflow: clip) {
+        html {
+            overflow-x: hidden;
+        }
+    }
+    body.store-theme {
+        overflow-x: clip;
+    }
+    @supports not (overflow: clip) {
+        body.store-theme {
+            overflow-x: hidden;
+        }
+    }
+    body.store-theme main {
+        min-width: 0;
+    }
+    #store-scroll-top {
+        right: max(1.25rem, env(safe-area-inset-right, 0px) + 0.25rem);
+        bottom: max(1.5rem, env(safe-area-inset-bottom, 0px) + 0.5rem);
+    }
+    @media (min-width: 768px) {
+        #store-scroll-top {
+            right: max(2rem, env(safe-area-inset-right, 0px) + 0.25rem);
+            bottom: max(2rem, env(safe-area-inset-bottom, 0px) + 0.5rem);
+        }
+    }
     /* Force flat colors (no gradients) across storefront UI. */
     [class*="bg-gradient-to-"] {
         background-image: none !important;

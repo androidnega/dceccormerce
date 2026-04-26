@@ -3,7 +3,7 @@
 @section('title', 'Register — ' . config('app.name'))
 
 @section('content')
-    <div class="mx-auto max-w-md">
+    <div class="mx-auto w-full max-w-md min-w-0">
         <h1 class="text-2xl font-bold text-slate-900">Create account</h1>
         <p class="mt-1 text-sm text-slate-600">Customer registration only. Admin accounts are created separately.</p>
 

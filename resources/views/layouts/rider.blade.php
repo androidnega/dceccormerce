@@ -20,7 +20,7 @@
         };
     </script>
 </head>
-<body class="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
+<body class="min-h-screen min-w-0 overflow-x-hidden bg-slate-50 font-sans text-slate-900 antialiased">
     <div class="flex min-h-screen flex-col md:flex-row">
         <aside class="border-b border-emerald-800 bg-emerald-700 text-white md:sticky md:top-0 md:flex md:h-screen md:w-56 md:shrink-0 md:flex-col md:border-b-0 md:border-r">
             <div class="flex items-center justify-between px-4 py-3 md:block md:border-b md:border-emerald-800 md:px-4 md:py-4">

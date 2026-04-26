@@ -30,7 +30,7 @@
                     <i class="fa-solid fa-chevron-right text-sm" aria-hidden="true"></i>
                 </button>
                 <div
-                    class="store-scrollbar-none mx-11 overflow-x-auto scroll-smooth pb-1 md:mx-14"
+                    class="store-scrollbar-none mx-8 overflow-x-auto scroll-smooth pb-1 sm:mx-10 md:mx-14"
                     data-trending-scroll
                     tabindex="0"
                 >

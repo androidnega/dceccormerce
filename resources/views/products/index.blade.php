@@ -2,7 +2,7 @@
 
 @section('title', 'Store — ' . config('app.name'))
 
-@section('main_class', 'w-full flex-1')
+@section('main_class', 'w-full min-w-0 flex-1')
 
 @section('content')
     @if (isset($useStackedCardsLayout) && $useStackedCardsLayout && $showHighlights && count($heroSlides) > 0)

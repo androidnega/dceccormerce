@@ -26,34 +26,69 @@
         };
     </script>
 </head>
-<body class="min-h-screen bg-[#f4f6f9] font-sans text-slate-900 antialiased">
-    <div class="grid min-h-screen w-full grid-cols-1 md:grid-cols-[minmax(0,15rem)_1fr] lg:grid-cols-[minmax(0,16rem)_1fr]">
-        <aside class="flex flex-col border-b border-slate-200 bg-slate-50 text-slate-800 md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r md:border-slate-200">
+<body class="min-h-screen min-w-0 overflow-x-hidden bg-[#f4f6f9] font-sans text-slate-900 antialiased">
+    <style>
+        /* Hide scrollbar but keep scrolling (Firefox + WebKit). */
+        .admin-no-scrollbar {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .admin-no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        @media (max-width: 767.98px) {
+            [data-admin-app-sidebar] {
+                transform: translate3d(-100%, 0, 0);
+            }
+            [data-admin-app-sidebar].admin-sidebar-open {
+                transform: translate3d(0, 0, 0);
+            }
+        }
+    </style>
+    <div
+        id="admin-sidebar-backdrop"
+        class="fixed inset-0 z-[45] hidden bg-slate-900/50 md:hidden"
+        aria-hidden="true"
+        data-admin-sidebar-backdrop
+    ></div>
+    <div class="md:grid md:min-h-screen md:w-full md:grid-cols-[minmax(0,15rem)_1fr] lg:grid-cols-[minmax(0,16rem)_1fr]">
+        <aside
+            id="admin-sidebar-panel"
+            data-admin-app-sidebar
+            class="flex flex-col border-b border-slate-200 bg-slate-50 text-slate-800 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:h-[100dvh] max-md:w-[min(17.5rem,88vw)] max-md:overflow-y-auto max-md:border-r max-md:shadow-2xl max-md:transition-transform max-md:duration-200 max-md:ease-out md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r md:border-slate-200 md:shadow-none"
+        >
             <div class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-4">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-[#ff6000] ring-1 ring-orange-100">
                     <i class="fa-solid fa-grip text-sm" aria-hidden="true"></i>
                 </span>
-                <div class="min-w-0 leading-tight">
+                <div class="min-w-0 flex-1 leading-tight">
                     <p class="truncate text-sm font-semibold text-slate-900">{{ config('app.name') }}</p>
                     <p class="text-xs text-slate-500">{{ auth()->user()->role === 'admin' ? 'Administrator' : 'Store manager' }}</p>
                 </div>
+                <button
+                    type="button"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 md:hidden"
+                    aria-label="Close menu"
+                    data-admin-sidebar-close
+                >
+                    <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+                </button>
             </div>
-            <style>
-                /* Hide scrollbar but keep scrolling (Firefox + WebKit). */
-                .admin-no-scrollbar {
-                    scrollbar-width: none;
-                    -ms-overflow-style: none;
-                }
-                .admin-no-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-            </style>
 
             @include('partials.dashboard-sidebar')
         </aside>
 
         <div class="flex min-h-screen min-w-0 flex-col bg-[#f4f6f9] md:h-screen md:overflow-y-auto">
             <header class="flex flex-wrap items-center gap-3 border-b border-slate-200/90 bg-slate-800 px-4 py-3 shadow-sm lg:gap-4 lg:px-6">
+                <button
+                    type="button"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-600/80 bg-slate-700/80 text-white transition hover:bg-slate-700 md:hidden"
+                    aria-expanded="false"
+                    aria-controls="admin-sidebar-panel"
+                    data-admin-sidebar-open
+                >
+                    <i class="fa-solid fa-bars text-lg" aria-hidden="true"></i>
+                </button>
                 <div class="min-w-0 flex-1 basis-full sm:basis-auto">
                     <h1 class="text-lg font-semibold tracking-tight text-white">@yield('heading', 'Dashboard')</h1>
                     @hasSection('subheading')
@@ -100,7 +135,7 @@
     @stack('scripts')
     <script>
         (function () {
-            var aside = document.querySelector('aside');
+            var aside = document.querySelector('[data-admin-app-sidebar]');
             if (!aside) return;
 
             var nav = aside.querySelector('nav[data-admin-sidebar="1"]') || aside.querySelector('nav');
@@ -122,6 +157,63 @@
             }
 
             ['logistics', 'catalog', 'homepage', 'system'].forEach(bindGroup);
+
+            var backdrop = document.querySelector('[data-admin-sidebar-backdrop]');
+            var openBtn = document.querySelector('[data-admin-sidebar-open]');
+            var closeEls = document.querySelectorAll('[data-admin-sidebar-close]');
+
+            function isMobileNav() {
+                return window.matchMedia('(max-width: 767.98px)').matches;
+            }
+
+            function setMobileOpen(open) {
+                if (!isMobileNav()) {
+                    aside.classList.remove('admin-sidebar-open');
+                    if (backdrop) {
+                        backdrop.classList.add('hidden');
+                        backdrop.setAttribute('aria-hidden', 'true');
+                    }
+                    document.body.classList.remove('overflow-hidden');
+                    if (openBtn) openBtn.setAttribute('aria-expanded', 'false');
+                    return;
+                }
+                aside.classList.toggle('admin-sidebar-open', open);
+                if (backdrop) {
+                    backdrop.classList.toggle('hidden', !open);
+                    backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+                }
+                document.body.classList.toggle('overflow-hidden', open);
+                if (openBtn) openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+
+            if (openBtn) {
+                openBtn.addEventListener('click', function () {
+                    setMobileOpen(!aside.classList.contains('admin-sidebar-open'));
+                });
+            }
+            closeEls.forEach(function (el) {
+                el.addEventListener('click', function () {
+                    setMobileOpen(false);
+                });
+            });
+            if (backdrop) {
+                backdrop.addEventListener('click', function () {
+                    setMobileOpen(false);
+                });
+            }
+            aside.querySelectorAll('a[href]').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (isMobileNav()) setMobileOpen(false);
+                });
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && aside.classList.contains('admin-sidebar-open')) {
+                    setMobileOpen(false);
+                }
+            });
+            window.addEventListener('resize', function () {
+                if (!isMobileNav()) setMobileOpen(false);
+            });
         })();
     </script>
 </body>

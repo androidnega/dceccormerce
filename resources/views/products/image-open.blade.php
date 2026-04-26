@@ -6,8 +6,8 @@
     <title>{{ $product->name }} — {{ config('app.name') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen bg-neutral-100 antialiased">
-    <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+<body class="min-h-screen min-w-0 overflow-x-hidden bg-neutral-100 antialiased">
+    <div class="mx-auto w-full min-w-0 max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <p class="mb-6 text-center">
             <a href="{{ route('products.show', $product) }}" class="text-sm font-medium text-primary-800 underline decoration-primary-300 underline-offset-2 hover:text-primary-950">← Back to product</a>
         </p>

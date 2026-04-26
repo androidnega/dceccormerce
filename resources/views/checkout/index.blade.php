@@ -1,7 +1,7 @@
 @extends('layout')
 
 @section('title', 'Checkout — ' . config('app.name'))
-@section('main_class', 'w-full flex-1 bg-slate-50/80')
+@section('main_class', 'w-full min-w-0 flex-1 bg-slate-50/80')
 
 @section('content')
     <div class="store-box pb-16 pt-8 sm:pb-20 sm:pt-10">
