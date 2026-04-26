@@ -1,0 +1,46 @@
+# =============================================================================
+# Laravel on shared hosting: document root = project root (e.g. public_html/)
+# Application web root must remain public/ — this file internally rewrites all
+# requests into public/ so URLs never show /public (no external redirect).
+#
+# Fallback if you still see "Index of /" or 404:
+# - In cPanel / hosting panel: enable "Apache mod_rewrite" (or "Rewrite Engine").
+# - Ensure AllowOverride includes FileInfo (and Options if your host requires it
+#   for Options -Indexes); otherwise .htaccess rules are ignored.
+# - Preferred fix: set the domain's document root to the public/ folder only,
+#   then you can remove this file's rewrite block (keep only Options if desired).
+# - If Options -Indexes causes HTTP 500, remove that line; ask host to disable
+#   indexes in the vhost instead.
+# =============================================================================
+
+<IfModule mod_negotiation.c>
+    Options -MultiViews -Indexes
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If the host mounts the site in a subdirectory, uncomment and fix the path:
+    # RewriteBase /subfolder/
+
+    # Block direct HTTP access to sensitive files at repository root (docroot).
+    RewriteRule ^\.env$ - [F,L]
+    RewriteRule ^\.git(/|$) - [F,L]
+    RewriteRule ^composer\.(json|lock)$ - [F,L]
+    RewriteRule ^package(-lock)?\.json$ - [F,L]
+    RewriteRule ^artisan$ - [F,L]
+
+    # Canonical URL: strip accidental /public/... from the browser address bar (301).
+    RewriteCond %{THE_REQUEST} \s/+public/[^\s?] [NC]
+    RewriteRule ^public/(.*)$ /$1 [R=301,L]
+
+    # Internal rewrite: serve everything from public/ (Laravel front controller lives there).
+    # REQUEST_URI stays the original path (/login, /api/..., assets under /build/...).
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# If mod_rewrite is unavailable, this helps "/" resolve to Laravel instead of a directory listing.
+<IfModule mod_dir.c>
+    DirectoryIndex public/index.php
+</IfModule>
