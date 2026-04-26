@@ -1,6 +1,7 @@
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
+        # FollowSymLinks helps Apache resolve public/storage → ../storage/app/public on shared hosts.
+        Options +FollowSymLinks -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On

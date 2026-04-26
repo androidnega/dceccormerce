@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'type',
@@ -114,7 +113,7 @@ class HomepageSection extends Model
             return '/storage/'.ltrim($path, '/');
         }
 
-        return Storage::disk('public')->url($path);
+        return public_storage_url($path);
     }
 
     /**

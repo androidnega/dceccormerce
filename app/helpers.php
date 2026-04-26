@@ -22,6 +22,32 @@ if (! function_exists('format_cedis')) {
     }
 }
 
+if (! function_exists('public_storage_url')) {
+    /**
+     * Root-relative URL for files on the public disk (served via public/storage → storage/app/public).
+     *
+     * Prefer this over Storage::disk('public')->url() in HTML so images use the current request host
+     * when APP_URL is wrong or still localhost on production (common on shared hosting).
+     */
+    function public_storage_url(?string $path): string
+    {
+        if ($path === null || $path === '') {
+            return '';
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        $path = str_replace('\\', '/', ltrim($path, '/'));
+        if (str_starts_with($path, 'storage/')) {
+            return '/'.$path;
+        }
+
+        return '/storage/'.$path;
+    }
+}
+
 if (! function_exists('category_fa_classes')) {
     /**
      * Font Awesome 6 classes for a category (e.g. for storefront sidebar and admin UI).

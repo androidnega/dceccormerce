@@ -37,20 +37,7 @@ class ProductImage extends Model
      */
     public static function resolveUrl(?string $path): string
     {
-        if ($path === null || $path === '') {
-            return '';
-        }
-
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        $path = str_replace('\\', '/', ltrim($path, '/'));
-        if (str_starts_with($path, 'storage/')) {
-            return '/'.$path;
-        }
-
-        return '/storage/'.$path;
+        return public_storage_url($path);
     }
 
     protected static function booted(): void

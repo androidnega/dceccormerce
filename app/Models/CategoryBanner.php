@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'type',
@@ -69,7 +68,7 @@ class CategoryBanner extends Model
             return asset(ltrim($path, '/'));
         }
 
-        return Storage::disk('public')->url($path);
+        return public_storage_url($path);
     }
 
     public function videoSourceUrl(): ?string
@@ -87,7 +86,7 @@ class CategoryBanner extends Model
             return $path;
         }
 
-        return Storage::disk('public')->url($path);
+        return public_storage_url($path);
     }
 
     public function youtubeVideoId(): ?string

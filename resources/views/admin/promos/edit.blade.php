@@ -34,7 +34,7 @@
         @if ($promo->media_upload_path)
             <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <p class="text-xs font-medium text-slate-600">Current upload</p>
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($promo->media_upload_path) }}" alt="" class="mt-2 max-h-40 rounded border border-slate-200 object-contain">
+                <img src="{{ public_storage_url($promo->media_upload_path) }}" alt="" class="mt-2 max-h-40 rounded border border-slate-200 object-contain">
                 <label class="mt-2 flex items-center gap-2 text-sm text-slate-700">
                     <input type="checkbox" name="remove_promo_image" value="1" class="rounded border-slate-300">
                     Remove uploaded image

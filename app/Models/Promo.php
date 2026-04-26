@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'title',
@@ -100,7 +99,7 @@ class Promo extends Model
         }
 
         if ($this->media_upload_path) {
-            return Storage::disk('public')->url($this->media_upload_path);
+            return public_storage_url($this->media_upload_path);
         }
 
         return trim((string) $this->media_external_url);
