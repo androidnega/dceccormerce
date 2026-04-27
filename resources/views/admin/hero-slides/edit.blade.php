@@ -72,11 +72,11 @@
         <div>
             <label for="image" class="block text-sm font-medium text-neutral-700">Replace image</label>
             <input type="file" name="image" id="image" accept="image/*"
-                class="mt-1 block w-full text-sm text-neutral-600 file:mr-4 file:rounded-md file:border-0 file:bg-primary-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-primary-700">
+                class="mt-1 block w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm text-slate-800 shadow-sm file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary-600 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700">
             <p class="mt-1 text-xs text-neutral-500">Leave empty to keep the current image.</p>
         </div>
         <div class="flex gap-3">
-            <button type="submit" class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">Save</button>
+            <button type="submit" class="rounded-md bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-primary-700/30 hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">Save</button>
             <a href="{{ route('dashboard.hero-slides.index') }}" class="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">Cancel</a>
         </div>
     </form>
