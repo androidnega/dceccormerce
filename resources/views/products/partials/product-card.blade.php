@@ -11,6 +11,7 @@
     $catalogPage = $catalogPage ?? false;
     $layout = ($forceGridLayout ?? false) ? StoreProductDisplaySetting::LAYOUT_GRID : $pd->product_layout;
     $size = $pd->card_size;
+    $isAdmin = auth()->check() && auth()->user()->role === 'admin';
     $isList = $layout === StoreProductDisplaySetting::LAYOUT_LIST;
     $swap = $pd->enable_image_hover_swap && $img2 !== null && $inStock;
 
@@ -187,6 +188,14 @@
                 @endif
             </div>
         </a>
+        @if ($isAdmin)
+            <a
+                href="{{ route('dashboard.products.edit', $product) }}"
+                class="mt-2 inline-flex w-fit items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+            >
+                Edit
+            </a>
+        @endif
         @if ($inStock)
             <form action="{{ route('cart.add', $product->id) }}" method="post" class="store-add-cart-form mt-1.5 md:hidden" data-add-to-cart>
                 @csrf

@@ -5,6 +5,7 @@
     $img = $product->images->first();
     $inStock = $product->stock > 0;
     $disc = $product->discountBadgeLabel();
+    $isAdmin = auth()->check() && auth()->user()->role === 'admin';
 @endphp
 <article
     data-product-card
@@ -68,6 +69,14 @@
                 @endif
             </div>
         </a>
+        @if ($isAdmin)
+            <a
+                href="{{ route('dashboard.products.edit', $product) }}"
+                class="mt-2 inline-flex w-fit self-center items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+            >
+                Edit
+            </a>
+        @endif
 
     </div>
 </article>

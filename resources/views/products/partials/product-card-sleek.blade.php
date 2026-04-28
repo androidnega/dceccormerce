@@ -8,6 +8,7 @@
     $showCategory = $showCategory ?? false;
     $catalogPage = $catalogPage ?? false;
     $size = $pd->card_size;
+    $isAdmin = auth()->check() && auth()->user()->role === 'admin';
     $hoverActions = $pd->enable_hover_actions;
     $hasDiscount = $product->hasActiveDiscount();
     $disc = $product->discountBadgeLabel();
@@ -146,6 +147,14 @@
                 $titleClass,
             ])>{{ $product->name }}</h3>
         </a>
+        @if ($isAdmin)
+            <a
+                href="{{ route('dashboard.products.edit', $product) }}"
+                class="mt-1 inline-flex w-fit self-center items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+            >
+                Edit
+            </a>
+        @endif
 
         <div class="mt-1 flex justify-center gap-0.5 text-[#FBBF24] sm:mt-2" aria-hidden="true">
             @for ($i = 0; $i < 5; $i++)
